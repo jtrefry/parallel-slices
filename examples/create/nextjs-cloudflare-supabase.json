@@ -1,0 +1,15 @@
+{
+  "$schema": "https://parallelslices.com/schemas/create-config.schema.json",
+  "version": 1,
+  "defaultController": "claude-code",
+  "architecture": {
+    "source": {
+      "type": "bundled",
+      "id": "nextjs-cloudflare-supabase"
+    },
+    "profile": "postgres",
+    "options": {
+      "package-manager": "pnpm"
+    }
+  }
+}

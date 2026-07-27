@@ -1,0 +1,128 @@
+import { blockingSeverities } from "./review-contract.mjs";
+
+// Single independent pass per reviewer, unanimity to pass.
+//
+// Reviewers previously negotiated across up to three rounds, assigning
+// uphold/dismiss dispositions to each other's findings. That machinery was the
+// most complex part of this subsystem and it rested on treating a reviewer's
+// stated reason as reliable. This project's own measurements say the opposite:
+// a judge's verdict is worth trusting and its explanation is not. So findings
+// are now simply reported, every reviewer must approve, and any request for
+// changes goes back to the controller to fix and re-run.
+
+export function applyReviewerResponse(
+  attempt,
+  round,
+  reviewer,
+  response,
+  durationMs,
+) {
+  const findingIds = [];
+  for (const submitted of response.findings) {
+    const id = `F${String(attempt.nextFindingNumber).padStart(3, "0")}`;
+    attempt.nextFindingNumber += 1;
+    findingIds.push(id);
+    attempt.findings.push({
+      id,
+      ...submitted,
+      raisedBy: reviewer.id,
+    });
+  }
+  round.turns.push({
+    reviewerId: reviewer.id,
+    provider: reviewer.provider,
+    providerVersion: reviewer.version,
+    verdict: response.verdict,
+    summary: response.summary,
+    findingIds,
+    durationMs,
+  });
+}
+
+export function evaluateConsensus(attempt, round, reviewerIds) {
+  const verdicts = new Map(
+    round.turns.map((turn) => [turn.reviewerId, turn.verdict]),
+  );
+  const allApproved = reviewerIds.every(
+    (reviewerId) => verdicts.get(reviewerId) === "approve",
+  );
+  const blocking = attempt.findings.filter((finding) =>
+    blockingSeverities.includes(finding.severity),
+  );
+  return {
+    approved: allApproved && blocking.length === 0,
+    allApproved,
+    blockingFindingIds: blocking.map((finding) => finding.id),
+  };
+}
+
+// Each reviewer sees the work and nothing else.
+//
+// The packet used to carry the running findings list, every prior reviewer's
+// summary, and an instruction to return uphold/dismiss assessments. That made
+// reviewers anchor on each other, which is fatal to the only property
+// unanimity has: two reviewers admit one bad artefact in sixteen instead of one
+// in four *because their errors are uncorrelated*. A reviewer that has already
+// read another's conclusions is no longer an independent sample.
+export function reviewPacketMarkdown(options) {
+  const {
+    attempt,
+    manifest,
+    reviewKind = "slice",
+    reviewer,
+    scopeFile,
+    snapshot,
+  } = options;
+  const reviewInstructions =
+    reviewKind === "planning"
+      ? `Read the approved Product Plan, every active scope manifest, run state,
+scope coverage, repository instructions, architecture contracts, current
+implementation, tests, fixtures, and relevant history. Verify requirement and
+preservation traceability; entrypoint, contract, consumer, data-side-effect,
+test, generated-file, release, and operations closure; exact worker paths;
+dependency and lock correctness; safe concurrency; negative outcomes; and
+non-goal preservation. Request changes for an omitted path, unjustified
+not-applicable disposition, changed subsystem or policy, hidden migration or
+external action, or any slice that cannot be completed from its worker packet.
+Do not approve based only on manifest self-assertions.`
+      : `Read the root instructions, plan, scope manifest, authorized patch, changed
+files, tests, release notes, and relevant surrounding code. Review security,
+correctness, UX, accessibility, selected-architecture boundaries,
+performance, scalability, workspace coverage, requirement-to-test traceability,
+negative and preservation cases, documentation, release notes, and accidental
+files.`;
+  return `# Parallel Slices ${reviewKind} review packet
+
+You are reviewer \`${reviewer.id}\` (${reviewer.provider}).
+Review the immutable source snapshot in this directory. Do not write files,
+execute mutating commands, contact external systems, or change Git state.
+
+You are reviewing independently. Other reviewers examine the same work at the
+same time, you will not see their conclusions, and they will not see yours.
+Report what you find. Every configured reviewer must approve for this to pass,
+so a single genuine problem is enough to block it, and agreeing with an
+imagined consensus helps nobody.
+
+## Contract
+
+- Scope manifest: \`${scopeFile}\`
+- Plan: \`${manifest.plan}\`
+- Slice: ${manifest.slice}
+- Requirements: ${manifest.requirements}
+- Observable outcome: ${manifest.observable}
+- Review kind: ${reviewKind}
+- Source fingerprint: \`${attempt.fingerprint}\`
+- Authorized patch: \`${snapshot.patchPath.slice(snapshot.snapshotRoot.length + 1)}\`
+- Changed paths: ${attempt.changedPaths.map((path) => `\`${path}\``).join(", ")}
+
+${reviewInstructions} Findings require precise repository-relative file and
+line evidence.
+
+## Verdict
+
+Return \`approve\` or \`request_changes\` with a summary and your findings. An
+approval may include non-blocking medium or low suggestions, but it cannot
+carry a critical or high finding: if something is critical or high, the verdict
+is \`request_changes\`.
+`;
+}

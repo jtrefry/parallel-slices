@@ -1,0 +1,10 @@
+{
+  "name": "@parallel-slices/architecture-nextjs-cloudflare-supabase",
+  "version": "0.1.1",
+  "private": true,
+  "description": "The reviewed Next.js, Mantine, PostgreSQL, and Cloudflare architecture package for Parallel Slices.",
+  "type": "module",
+  "dependencies": {
+    "create-turbo": "2.10.7"
+  }
+}

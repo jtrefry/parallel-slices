@@ -1,0 +1,47 @@
+name: Parallel Slices Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parallel-slices-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        node:
+          - "22"
+          - "24"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install locked development dependencies
+        run: npm install --global npm@10.9.8 && npm ci --ignore-scripts
+
+      - name: Run repository checks
+        run: npm run check
+
+      - name: Report test coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        run: npm run test:coverage

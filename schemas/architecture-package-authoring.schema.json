@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Parallel Slices architecture package authoring configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "version",
+    "id",
+    "packageName",
+    "packageVersion",
+    "displayName",
+    "description",
+    "components",
+    "capabilities",
+    "defaultProfile"
+  ],
+  "properties": {
+    "$schema": {
+      "enum": [
+        "./schemas/architecture-package-authoring.schema.json",
+        "https://parallelslices.com/schemas/architecture-package-authoring.schema.json"
+      ]
+    },
+    "version": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "packageName": {
+      "type": "string",
+      "pattern": "^(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$"
+    },
+    "packageVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "defaultProfile": { "$ref": "#/$defs/id" },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "technology"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "kind": { "$ref": "#/$defs/id" },
+          "technology": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "attributes": { "type": "object" }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*(?::[a-z0-9]+(?:-[a-z0-9]+)*)*$"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    }
+  }
+}

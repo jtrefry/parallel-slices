@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Parallel Slices project creation configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "architecture"],
+  "properties": {
+    "$schema": {
+      "enum": [
+        "./schemas/create-config.schema.json",
+        "https://parallelslices.com/schemas/create-config.schema.json"
+      ]
+    },
+    "version": { "const": 1 },
+    "defaultController": {
+      "enum": ["cursor", "codex", "claude-code"]
+    },
+    "architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "id"],
+              "properties": {
+                "type": { "const": "bundled" },
+                "id": { "$ref": "#/$defs/id" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "path"],
+              "properties": {
+                "type": { "const": "local" },
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "not": { "pattern": "^(?:/|[A-Za-z]:[\\\\/])" }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "package", "version"],
+              "properties": {
+                "type": { "const": "npm" },
+                "package": {
+                  "type": "string",
+                  "pattern": "^(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$"
+                },
+                "version": {
+                  "type": "string",
+                  "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                }
+              }
+            }
+          ]
+        },
+        "profile": { "$ref": "#/$defs/id" },
+        "options": { "type": "object" }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    }
+  }
+}

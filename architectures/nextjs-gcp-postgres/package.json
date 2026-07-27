@@ -1,0 +1,10 @@
+{
+  "name": "@parallel-slices/architecture-nextjs-gcp-postgres",
+  "version": "0.5.2",
+  "private": true,
+  "description": "The reviewed Next.js, Mantine, PostgreSQL, and Google Cloud architecture package for Parallel Slices.",
+  "type": "module",
+  "dependencies": {
+    "create-turbo": "2.10.7"
+  }
+}

@@ -1,0 +1,245 @@
+{
+  "$schema": "../../schemas/architecture-package.schema.json",
+  "contractVersion": 1,
+  "id": "nextjs-gcp-postgres",
+  "packageName": "@parallel-slices/architecture-nextjs-gcp-postgres",
+  "version": "0.5.2",
+  "displayName": "Next.js on Google Cloud with PostgreSQL",
+  "description": "A Next.js Turborepo with Mantine, PostgreSQL, and a Cloud Run production baseline.",
+  "components": [
+    {
+      "id": "web-application",
+      "kind": "application",
+      "technology": "Next.js App Router",
+      "optional": false,
+      "attributes": { "formFactor": "web", "language": "TypeScript" }
+    },
+    {
+      "id": "workspace",
+      "kind": "workspace",
+      "technology": "Turborepo",
+      "optional": false,
+      "attributes": { "packageScripts": true }
+    },
+    {
+      "id": "component-system",
+      "kind": "ui",
+      "technology": "Mantine",
+      "optional": false,
+      "attributes": { "tailwind": false }
+    },
+    {
+      "id": "database",
+      "kind": "data",
+      "technology": "PostgreSQL",
+      "optional": false,
+      "attributes": { "productionService": "Cloud SQL" }
+    },
+    {
+      "id": "cloud-platform",
+      "kind": "deployment",
+      "technology": "Google Cloud",
+      "optional": false,
+      "attributes": { "compute": ["Cloud Run", "Cloud Run Jobs"] }
+    }
+  ],
+  "capabilities": [
+    "application:web",
+    "workspace:turborepo",
+    "frontend:nextjs",
+    "ui:mantine",
+    "database:postgresql",
+    "cloud:gcp",
+    "deployment:cloud-run"
+  ],
+  "options": {
+    "package-manager": {
+      "type": "string",
+      "description": "Package manager used by the generated Turborepo and control plane.",
+      "default": "pnpm",
+      "enum": ["npm", "pnpm", "yarn", "bun"]
+    }
+  },
+  "entrypointCapabilityFloors": {
+    "generatedBaseline": ["lint", "types", "build"],
+    "preCommit": ["format", "lint", "types", "security:sql", "build", "unit"],
+    "prePush": [
+      "format",
+      "lint",
+      "types",
+      "security:sql",
+      "build",
+      "unit",
+      "integration",
+      "e2e",
+      "security:trivy"
+    ],
+    "ci": [
+      "format",
+      "lint",
+      "types",
+      "security:sql",
+      "build",
+      "unit",
+      "integration",
+      "e2e",
+      "security:trivy"
+    ],
+    "loop": ["format", "lint", "types", "security:sql", "build", "unit"]
+  },
+  "generator": { "module": "generator.mjs" },
+  "overlay": {
+    "directory": "repo-overlay",
+    "requiredFiles": [
+      ".agents/skills/parallel-slices-init/SKILL.md",
+      ".agents/skills/slices-init/SKILL.md",
+      ".parallel-slices/config.json",
+      ".parallel-slices/curated-skills.json",
+      ".parallel-slices/sql-security.json",
+      ".claude/skills/parallel-slices-init/SKILL.md",
+      ".claude/skills/slices-init/SKILL.md",
+      ".cursor/commands/parallel-slices-init.md",
+      ".cursor/commands/slices-init.md",
+      ".cursor/skills/parallel-slices-init/SKILL.md",
+      ".github/dependabot.yml",
+      ".github/workflows/quality.yml",
+      ".github/workflows/deploy-cloud-run.yml",
+      ".trivy-version",
+      "apps/backend/migrations/AGENTS.md",
+      "apps/backend/migrations/README.md",
+      "apps/backend/migrations/_MIGRATION_TEMPLATE.sql",
+      "docs/parallel-slices/initialize-nextjs-gcp-postgres-project.md",
+      "scripts/architecture/nextjs-gcp-postgres/verify.mjs",
+      "scripts/database/postgres-migration-runner.ts",
+      "scripts/security/sql-security-scanner.ts",
+      "scripts/security/trivy-security-scanner.mjs",
+      "trivy.yaml"
+    ]
+  },
+  "verification": {
+    "module": "repo-overlay/scripts/architecture/nextjs-gcp-postgres/verify.mjs",
+    "installedModule": "scripts/architecture/nextjs-gcp-postgres/verify.mjs"
+  },
+  "templates": { "rootInstructions": "templates/root-AGENTS.md" },
+  "projectDocuments": [
+    "docs/project/product-brief.md",
+    "docs/project/architecture.md",
+    "docs/project/security-and-privacy.md",
+    "docs/project/testing-strategy.md",
+    "docs/project/local-development.md",
+    "docs/project/gcp-operations.md",
+    "docs/project/decision-log.md"
+  ],
+  "controllers": {
+    "cursor": { "initializeCommand": "/parallel-slices-init" },
+    "codex": { "initializeCommand": "$parallel-slices-init" },
+    "claude-code": { "initializeCommand": "/parallel-slices-init" }
+  },
+  "profiles": {
+    "default": "postgres",
+    "definitions": {
+      "postgres": {
+        "description": "Next.js on Cloud Run with PostgreSQL, Cloud SQL, SQL security checks, and ordered migrations."
+      },
+      "external-api-only": {
+        "description": "Next.js on Cloud Run using external APIs without an application database, SQL tooling, or migrations.",
+        "displayName": "Next.js on Google Cloud with external APIs",
+        "components": [
+          {
+            "id": "web-application",
+            "kind": "application",
+            "technology": "Next.js App Router",
+            "optional": false,
+            "attributes": { "formFactor": "web", "language": "TypeScript" }
+          },
+          {
+            "id": "workspace",
+            "kind": "workspace",
+            "technology": "Turborepo",
+            "optional": false,
+            "attributes": { "packageScripts": true }
+          },
+          {
+            "id": "component-system",
+            "kind": "ui",
+            "technology": "Mantine",
+            "optional": false,
+            "attributes": { "tailwind": false }
+          },
+          {
+            "id": "external-data",
+            "kind": "data",
+            "technology": "External APIs",
+            "optional": false,
+            "attributes": { "persistence": false }
+          },
+          {
+            "id": "cloud-platform",
+            "kind": "deployment",
+            "technology": "Google Cloud",
+            "optional": false,
+            "attributes": { "compute": ["Cloud Run", "Cloud Run Jobs"] }
+          }
+        ],
+        "capabilities": [
+          "application:web",
+          "workspace:turborepo",
+          "frontend:nextjs",
+          "ui:mantine",
+          "data:external-api",
+          "cloud:gcp",
+          "deployment:cloud-run"
+        ],
+        "entrypointCapabilityFloors": {
+          "generatedBaseline": ["lint", "types", "build"],
+          "preCommit": ["format", "lint", "types", "build", "unit"],
+          "prePush": [
+            "format",
+            "lint",
+            "types",
+            "build",
+            "unit",
+            "integration",
+            "e2e",
+            "security:trivy"
+          ],
+          "ci": [
+            "format",
+            "lint",
+            "types",
+            "build",
+            "unit",
+            "integration",
+            "e2e",
+            "security:trivy"
+          ],
+          "loop": ["format", "lint", "types", "build", "unit"]
+        },
+        "overlay": {
+          "excludeFiles": [
+            ".parallel-slices/config.json",
+            ".parallel-slices/sql-security.json",
+            ".github/workflows/quality.yml",
+            ".github/workflows/deploy-cloud-run.yml",
+            "apps/backend/migrations/AGENTS.md",
+            "apps/backend/migrations/README.md",
+            "apps/backend/migrations/_MIGRATION_TEMPLATE.sql",
+            "docs/parallel-slices/initialize-nextjs-gcp-postgres-project.md",
+            "scripts/database/postgres-migration-runner.ts",
+            "scripts/security/sql-security-scanner.ts"
+          ],
+          "directory": "profiles/external-api-only/repo-overlay",
+          "requiredFiles": [
+            ".parallel-slices/config.json",
+            ".github/workflows/quality.yml",
+            ".github/workflows/deploy-cloud-run.yml",
+            "docs/parallel-slices/initialize-nextjs-gcp-postgres-project.md"
+          ]
+        },
+        "templates": {
+          "rootInstructions": "profiles/external-api-only/templates/root-AGENTS.md"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+name: Deploy Cloudflare
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Quality
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.conclusion == 'success')) &&
+      vars.CLOUDFLARE_WORKER_NAME != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    steps:
+      - name: Check out the quality-gated revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Detect package manager
+        id: package-manager
+        shell: bash
+        run: |
+          echo "name=$(node scripts/parallel-slices/quality.mjs package-manager)" >> "$GITHUB_OUTPUT"
+          echo "spec=$(node scripts/parallel-slices/quality.mjs package-manager-spec)" >> "$GITHUB_OUTPUT"
+
+      - name: Activate pinned npm
+        if: steps.package-manager.outputs.name == 'npm'
+        env:
+          PACKAGE_MANAGER_SPEC: ${{ steps.package-manager.outputs.spec }}
+        run: npm install --global "$PACKAGE_MANAGER_SPEC"
+
+      - name: Set up Bun
+        if: steps.package-manager.outputs.name == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Install locked dependencies
+        run: node scripts/parallel-slices/quality.mjs ci-install
+
+      # The Worker is built from the exact commit the Quality workflow passed,
+      # never from a moving branch.
+      # Run from the workspace directory: `<manager> run <script>` is common to
+      # npm, pnpm, yarn and bun, whereas their workspace filter flags are not.
+      - name: Build the Worker bundle
+        working-directory: apps/web
+        run: ${{ steps.package-manager.outputs.name }} run build:cloudflare
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      # Migrations run here, from CI, over a direct TCP connection. They never
+      # run from the Worker: Workers cannot open raw TCP sockets, so runtime
+      # database access goes through Hyperdrive or the Supabase HTTP client.
+      - name: Apply database migrations
+        if: vars.SUPABASE_MIGRATIONS_ENABLED == 'true'
+        run: ${{ steps.package-manager.outputs.name }} run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+
+      - name: Deploy to Cloudflare Workers
+        id: deploy
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/web
+          command: deploy --name ${{ vars.CLOUDFLARE_WORKER_NAME }}
+
+      - name: Record the deployed revision
+        shell: bash
+        env:
+          REVISION_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          WORKER_NAME: ${{ vars.CLOUDFLARE_WORKER_NAME }}
+        run: |
+          echo "Deployed ${WORKER_NAME} at ${REVISION_SHA}" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,57 @@
+{
+  "name": "@parallel-slices/scaffold-baseline",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Exact framework and UI versions applied to newly generated projects.",
+  "dependencies": {
+    "@mantine/core": "9.4.2",
+    "@mantine/hooks": "9.4.2",
+    "next": "16.2.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@next/eslint-plugin-next": "16.2.12",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.5",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-only-warn": "1.2.1",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-turbo": "2.10.7",
+    "globals": "17.8.0",
+    "husky": "9.1.7",
+    "postcss": "8.5.23",
+    "postcss-preset-mantine": "1.18.0",
+    "postcss-simple-vars": "7.0.1",
+    "prettier": "3.9.6",
+    "turbo": "2.10.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0"
+  },
+  "parallelSlices": {
+    "node": {
+      "engines": "^22.0.0 || ^24.0.0",
+      "pin": "24"
+    },
+    "packageManagers": {
+      "npm": "10.9.8",
+      "pnpm": "10.34.5",
+      "yarn": "4.17.1",
+      "bun": "1.3.14"
+    },
+    "packageManagerHolds": {
+      "npm": "npm 11 and 12 require newer Node.js patch levels than the documented Node.js 22 and 24 LTS prerequisite.",
+      "pnpm": "pnpm 11 requires a newer Node.js 22 patch level than the documented Node.js 22 LTS prerequisite."
+    },
+    "compatibilityHolds": {
+      "@eslint/js": "ESLint 10 is held until eslint-plugin-react declares support.",
+      "@types/node": "Node types track the Node.js 24 LTS initialization target.",
+      "eslint": "ESLint 10 is held until eslint-plugin-react declares support.",
+      "typescript": "TypeScript is held below 6.1 for the typescript-eslint peer range."
+    }
+  }
+}

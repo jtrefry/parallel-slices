@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a focused improvement to the human-directed, AI-built Next.js workflow.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What developer outcome is difficult, unsafe, or manual today?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Observable outcome
+      description: What should a developer be able to do after this change?
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Scope and non-goals
+      description: Identify affected layers and adjacent behavior that should remain unchanged.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include simpler workflows or existing tools that were considered.

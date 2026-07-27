@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible defect in setup, gating, documentation, or generated workflows.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, customer data, private hosts, or vulnerability details.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release version or commit SHA where the defect occurs.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, architecture, Node.js, selected AI agent, package manager, and container runtime versions.
+    validations:
+      required: true
+  - type: dropdown
+    id: project_kind
+    attributes:
+      label: Target repository
+      options:
+        - New Turborepo
+        - Existing Turborepo
+        - Parallel Slices repository itself
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest deterministic sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result and sanitized output
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I removed secrets, private identifiers, customer data, and proprietary source.
+          required: true
+        - label: This report does not describe a security vulnerability.
+          required: true

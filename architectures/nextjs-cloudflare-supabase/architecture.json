@@ -1,0 +1,277 @@
+{
+  "$schema": "../../schemas/architecture-package.schema.json",
+  "contractVersion": 1,
+  "id": "nextjs-cloudflare-supabase",
+  "packageName": "@parallel-slices/architecture-nextjs-cloudflare-supabase",
+  "version": "0.1.1",
+  "displayName": "Next.js on Cloudflare with Supabase",
+  "description": "A Next.js Turborepo with Mantine, PostgreSQL, and a Cloudflare Workers production baseline.",
+  "components": [
+    {
+      "id": "web-application",
+      "kind": "application",
+      "technology": "Next.js App Router",
+      "optional": false,
+      "attributes": {
+        "formFactor": "web",
+        "language": "TypeScript"
+      }
+    },
+    {
+      "id": "workspace",
+      "kind": "workspace",
+      "technology": "Turborepo",
+      "optional": false,
+      "attributes": {
+        "packageScripts": true
+      }
+    },
+    {
+      "id": "component-system",
+      "kind": "ui",
+      "technology": "Mantine",
+      "optional": false,
+      "attributes": {
+        "tailwind": false
+      }
+    },
+    {
+      "id": "database",
+      "kind": "data",
+      "technology": "PostgreSQL",
+      "optional": false,
+      "attributes": {
+        "productionService": "Supabase"
+      }
+    },
+    {
+      "id": "cloud-platform",
+      "kind": "deployment",
+      "technology": "Cloudflare",
+      "optional": false,
+      "attributes": {
+        "compute": ["Workers"]
+      }
+    }
+  ],
+  "capabilities": [
+    "application:web",
+    "workspace:turborepo",
+    "frontend:nextjs",
+    "ui:mantine",
+    "database:postgresql",
+    "cloud:cloudflare",
+    "deployment:workers"
+  ],
+  "options": {
+    "package-manager": {
+      "type": "string",
+      "description": "Package manager used by the generated Turborepo and control plane.",
+      "default": "pnpm",
+      "enum": ["npm", "pnpm", "yarn", "bun"]
+    }
+  },
+  "entrypointCapabilityFloors": {
+    "generatedBaseline": ["lint", "types", "build"],
+    "preCommit": ["format", "lint", "types", "security:sql", "build", "unit"],
+    "prePush": [
+      "format",
+      "lint",
+      "types",
+      "security:sql",
+      "build",
+      "unit",
+      "integration",
+      "e2e",
+      "security:trivy"
+    ],
+    "ci": [
+      "format",
+      "lint",
+      "types",
+      "security:sql",
+      "build",
+      "unit",
+      "integration",
+      "e2e",
+      "security:trivy"
+    ],
+    "loop": ["format", "lint", "types", "security:sql", "build", "unit"]
+  },
+  "generator": {
+    "module": "generator.mjs"
+  },
+  "overlay": {
+    "directory": "repo-overlay",
+    "requiredFiles": [
+      ".agents/skills/parallel-slices-init/SKILL.md",
+      ".agents/skills/slices-init/SKILL.md",
+      ".parallel-slices/config.json",
+      ".parallel-slices/curated-skills.json",
+      ".parallel-slices/sql-security.json",
+      ".claude/skills/parallel-slices-init/SKILL.md",
+      ".claude/skills/slices-init/SKILL.md",
+      ".cursor/commands/parallel-slices-init.md",
+      ".cursor/commands/slices-init.md",
+      ".cursor/skills/parallel-slices-init/SKILL.md",
+      ".github/dependabot.yml",
+      ".github/workflows/quality.yml",
+      ".github/workflows/deploy-cloudflare.yml",
+      ".trivy-version",
+      "apps/backend/migrations/AGENTS.md",
+      "apps/backend/migrations/README.md",
+      "apps/backend/migrations/_MIGRATION_TEMPLATE.sql",
+      "docs/parallel-slices/initialize-nextjs-cloudflare-supabase-project.md",
+      "scripts/architecture/nextjs-cloudflare-supabase/verify.mjs",
+      "scripts/database/postgres-migration-runner.ts",
+      "scripts/security/sql-security-scanner.ts",
+      "scripts/security/trivy-security-scanner.mjs",
+      "trivy.yaml"
+    ]
+  },
+  "verification": {
+    "module": "repo-overlay/scripts/architecture/nextjs-cloudflare-supabase/verify.mjs",
+    "installedModule": "scripts/architecture/nextjs-cloudflare-supabase/verify.mjs"
+  },
+  "templates": {
+    "rootInstructions": "templates/root-AGENTS.md"
+  },
+  "projectDocuments": [
+    "docs/project/product-brief.md",
+    "docs/project/architecture.md",
+    "docs/project/security-and-privacy.md",
+    "docs/project/testing-strategy.md",
+    "docs/project/local-development.md",
+    "docs/project/cloudflare-operations.md",
+    "docs/project/decision-log.md"
+  ],
+  "controllers": {
+    "cursor": {
+      "initializeCommand": "/parallel-slices-init"
+    },
+    "codex": {
+      "initializeCommand": "$parallel-slices-init"
+    },
+    "claude-code": {
+      "initializeCommand": "/parallel-slices-init"
+    }
+  },
+  "profiles": {
+    "default": "postgres",
+    "definitions": {
+      "postgres": {
+        "description": "Next.js on Cloudflare Workers with PostgreSQL, Supabase, SQL security checks, and ordered migrations."
+      },
+      "external-api-only": {
+        "description": "Next.js on Cloudflare Workers using external APIs without an application database, SQL tooling, or migrations.",
+        "displayName": "Next.js on Cloudflare with external APIs",
+        "components": [
+          {
+            "id": "web-application",
+            "kind": "application",
+            "technology": "Next.js App Router",
+            "optional": false,
+            "attributes": {
+              "formFactor": "web",
+              "language": "TypeScript"
+            }
+          },
+          {
+            "id": "workspace",
+            "kind": "workspace",
+            "technology": "Turborepo",
+            "optional": false,
+            "attributes": {
+              "packageScripts": true
+            }
+          },
+          {
+            "id": "component-system",
+            "kind": "ui",
+            "technology": "Mantine",
+            "optional": false,
+            "attributes": {
+              "tailwind": false
+            }
+          },
+          {
+            "id": "external-data",
+            "kind": "data",
+            "technology": "External APIs",
+            "optional": false,
+            "attributes": {
+              "persistence": false
+            }
+          },
+          {
+            "id": "cloud-platform",
+            "kind": "deployment",
+            "technology": "Cloudflare",
+            "optional": false,
+            "attributes": {
+              "compute": ["Cloudflare Workers", "Cloudflare Queues"]
+            }
+          }
+        ],
+        "capabilities": [
+          "application:web",
+          "workspace:turborepo",
+          "frontend:nextjs",
+          "ui:mantine",
+          "data:external-api",
+          "cloud:cloudflare",
+          "deployment:cloud-run"
+        ],
+        "entrypointCapabilityFloors": {
+          "generatedBaseline": ["lint", "types", "build"],
+          "preCommit": ["format", "lint", "types", "build", "unit"],
+          "prePush": [
+            "format",
+            "lint",
+            "types",
+            "build",
+            "unit",
+            "integration",
+            "e2e",
+            "security:trivy"
+          ],
+          "ci": [
+            "format",
+            "lint",
+            "types",
+            "build",
+            "unit",
+            "integration",
+            "e2e",
+            "security:trivy"
+          ],
+          "loop": ["format", "lint", "types", "build", "unit"]
+        },
+        "overlay": {
+          "excludeFiles": [
+            ".parallel-slices/config.json",
+            ".parallel-slices/sql-security.json",
+            ".github/workflows/quality.yml",
+            ".github/workflows/deploy-cloudflare.yml",
+            "apps/backend/migrations/AGENTS.md",
+            "apps/backend/migrations/README.md",
+            "apps/backend/migrations/_MIGRATION_TEMPLATE.sql",
+            "docs/parallel-slices/initialize-nextjs-cloudflare-supabase-project.md",
+            "scripts/database/postgres-migration-runner.ts",
+            "scripts/security/sql-security-scanner.ts"
+          ],
+          "directory": "profiles/external-api-only/repo-overlay",
+          "requiredFiles": [
+            ".parallel-slices/config.json",
+            ".github/workflows/quality.yml",
+            ".github/workflows/deploy-cloudflare.yml",
+            "docs/parallel-slices/initialize-nextjs-cloudflare-supabase-project.md"
+          ]
+        },
+        "templates": {
+          "rootInstructions": "profiles/external-api-only/templates/root-AGENTS.md"
+        }
+      }
+    }
+  }
+}

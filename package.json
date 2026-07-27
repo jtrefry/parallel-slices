@@ -1,0 +1,53 @@
+{
+  "name": "parallel-slices",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Governed AI coding through planned, gated, parallel slices and validated architecture packages.",
+  "homepage": "https://parallelslices.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jtrefry/parallel-slices.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jtrefry/parallel-slices/issues"
+  },
+  "author": {
+    "name": "EB App LLC",
+    "email": "james@eb.app"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "workspaces": [
+    "architectures/*"
+  ],
+  "packageManager": "npm@10.9.8",
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0"
+  },
+  "scripts": {
+    "audit": "node scripts/audit-repository.mjs",
+    "architecture-package": "node scripts/architecture-package.mjs",
+    "bootstrap": "node scripts/bootstrap-new.mjs",
+    "check:javascript": "find scripts repo-overlay/scripts architectures tests -type f -name '*.mjs' -exec node --check {} \\;",
+    "check:typescript": "tsc --noEmit",
+    "check:shell": "bash -n scripts/*.sh repo-overlay/.husky/pre-commit repo-overlay/.husky/pre-push",
+    "check:workflows": "node scripts/check-workflows.mjs",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "test": "node --test tests/*.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage tests/*.test.mjs",
+    "check": "npm run check:javascript && npm run check:typescript && npm run check:shell && npm run check:workflows && npm run lint && npm run format:check && npm run audit && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "@types/pg": "8.20.0",
+    "eslint": "10.8.0",
+    "globals": "17.8.0",
+    "pg": "8.22.0",
+    "prettier": "3.9.6",
+    "tsx": "4.23.1",
+    "typescript": "7.0.2",
+    "yaml": "2.9.0"
+  }
+}

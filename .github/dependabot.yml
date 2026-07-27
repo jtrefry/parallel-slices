@@ -1,0 +1,69 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      # Node types track the supported Node.js 22 and 24 LTS runtimes declared
+      # in this package's engines field, matching the scaffold policy below.
+      - dependency-name: "@types/node"
+        versions:
+          - ">=25.0.0"
+    labels:
+      - dependencies
+      - development
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - ci
+  - package-ecosystem: npm
+    directory: /architectures/nextjs-gcp-postgres/scaffold
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "@eslint/js"
+        versions:
+          - ">=10.0.0"
+      - dependency-name: "@types/node"
+        versions:
+          - ">=25.0.0"
+      - dependency-name: eslint
+        versions:
+          - ">=10.0.0"
+      - dependency-name: typescript
+        versions:
+          - ">=6.1.0"
+    labels:
+      - dependencies
+      - framework
+  - package-ecosystem: terraform
+    directory: /examples
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - infrastructure
+  - package-ecosystem: npm
+    directory: /architectures/nextjs-cloudflare-supabase/scaffold
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "@eslint/js"
+        versions:
+          - ">=10.0.0"
+      - dependency-name: "@types/node"
+        versions:
+          - ">=25.0.0"
+      - dependency-name: eslint
+        versions:
+          - ">=10.0.0"
+      - dependency-name: typescript
+        versions:
+          - ">=6.1.0"
+    labels:
+      - dependencies
+      - framework

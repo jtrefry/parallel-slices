@@ -1,0 +1,5 @@
+# Default owner for every repository path.
+* james@eb.app
+
+# Keep ownership policy changes under the same review requirement.
+/.github/CODEOWNERS james@eb.app
