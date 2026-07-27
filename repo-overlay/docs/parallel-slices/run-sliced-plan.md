@@ -192,7 +192,14 @@ only after both pass.
      --worker-id <worker-id>
    ```
 
-4. Review the integrated diff independently. When
+4. Review the integrated diff independently. **Freeze the goal checkout while
+   it runs.** A review fingerprints the repository it is judging, so any commit
+   the root makes meanwhile, even to an unrelated contract document, invalidates
+   the whole run: it exits `STALE`, having spent every reviewer's time on a tree
+   that no longer exists. Land whatever else you were going to commit before
+   starting the review, or hold it until the review returns. Nothing about the
+   goal branch may move between the integrated gate and the review's verdict.
+   When
    `.parallel-slices/review.json` is enabled, run the configured review
    orchestrator with `--worker-id <worker-id>` so approval and progress are
    tracked and its JSON and Markdown artifacts are generated. When it is
