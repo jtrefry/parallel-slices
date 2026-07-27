@@ -37,6 +37,11 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { realpathSync } from "node:fs";
 
+import {
+  primaryRepositoryRoot,
+  updateIntegrationTracking,
+} from "./run-tracking.mjs";
+
 const MINIMUM_REASON = 40;
 
 function repositoryRoot() {
@@ -178,6 +183,26 @@ export async function overrideReviewFindings(root, options) {
     );
     return { status: "changes_requested", exitCode: 10 };
   }
+  // A slice review records its outcome in run tracking, and acceptance reads
+  // that rather than the ledger. Without this the decision would sit in the
+  // artifact while the slice stayed blocked, which is the deadlock this command
+  // exists to break.
+  if (options.workerId) {
+    updateIntegrationTracking(
+      primaryRepositoryRoot(root),
+      options.workerId,
+      "review_approved",
+      {
+        review: {
+          status: "APPROVED_WITH_OVERRIDES",
+          artifact: artifactPath,
+          overrides: record.overrides.map((entry) => entry.findingId),
+        },
+        blocker: null,
+      },
+    );
+    console.log(`recorded review_approved for worker ${options.workerId}`);
+  }
   console.log(`status: ${record.status}`);
   console.log("This override is permanent and appears in the final audit.");
   return { status: record.status, exitCode: 0 };
@@ -194,13 +219,14 @@ function parseArguments(argv) {
       if (argument === "--artifact")
         options.artifact = value.replace(/^\.\//, "");
       else if (argument === "--finding") options.findings.push(value);
+      else if (argument === "--worker-id") options.workerId = value;
       else options.reason = value;
       index += 1;
     } else fail(`unknown argument: ${argument}`);
   }
   if (!options.artifact) {
     fail(
-      "usage: review-override.mjs --artifact <review.json> (--finding <id> | --all) --reason <text>",
+      "usage: review-override.mjs --artifact <review.json> (--finding <id> | --all) --reason <text> [--worker-id <id>]",
     );
   }
   if (!options.all && !options.findings.length) {

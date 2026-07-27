@@ -202,6 +202,26 @@ export async function reviewProductPlan(root, planPath, options = {}) {
     rmSync(scratchRoot, { recursive: true, force: true });
   }
 
+  // Overrides live in the artifact this run is about to replace. Carry one
+  // forward only when it still refers to the same plan content and the same
+  // finding, so a decision cannot silently attach itself to different work.
+  function carryForwardOverrides(root, paths, fingerprint, findings) {
+    const artifact = resolve(root, paths.json);
+    if (!existsSync(artifact)) return [];
+    let previous;
+    try {
+      previous = JSON.parse(readFileSync(artifact, "utf8"));
+    } catch {
+      return [];
+    }
+    if (previous.fingerprint !== fingerprint) return [];
+    const byId = new Map(findings.map((finding) => [finding.id, finding]));
+    return (previous.overrides ?? []).filter((entry) => {
+      const finding = byId.get(entry.findingId);
+      return finding && finding.title === entry.title;
+    });
+  }
+
   const findings = results.flatMap((entry) =>
     entry.findings.map((finding, index) => ({
       id: `P${String(index + 1).padStart(3, "0")}-${entry.reviewerId}`,
@@ -209,18 +229,33 @@ export async function reviewProductPlan(root, planPath, options = {}) {
       ...finding,
     })),
   );
-  const blocking = findings.filter((finding) =>
-    ["critical", "high"].includes(finding.severity),
+  // Reviews inform the developer's decision; they do not hold a veto over it.
+  // An orchestrator may accept a finding on the record with review-override.mjs.
+  // This artifact is rewritten on every run, so a prior decision is carried
+  // forward only when it still refers to the same plan and the same finding:
+  // the fingerprint must match, and so must the finding's id and title, because
+  // ids are regenerated per run and a reviewer may return different findings.
+  const carried = carryForwardOverrides(root, paths, fingerprint, findings);
+  const overridden = new Set(carried.map((entry) => entry.findingId));
+  const blocking = findings.filter(
+    (finding) =>
+      ["critical", "high"].includes(finding.severity) &&
+      !overridden.has(finding.id),
   );
   const allApproved = results.every((entry) => entry.verdict === "approve");
-  const approved = allApproved && blocking.length === 0;
+  const approved =
+    blocking.length === 0 && (allApproved || overridden.size > 0);
 
   writeArtifacts(root, paths, {
     version: 1,
     plan: planPath,
     fingerprint,
     reviewedAt: options.now ? options.now() : new Date().toISOString(),
-    status: approved ? "approved" : "changes_requested",
+    status: approved
+      ? overridden.size
+        ? "approved_with_overrides"
+        : "approved"
+      : "changes_requested",
     reviewers: results.map((entry) => ({
       reviewerId: entry.reviewerId,
       provider: entry.provider,
@@ -230,6 +265,7 @@ export async function reviewProductPlan(root, planPath, options = {}) {
       durationMs: entry.durationMs,
     })),
     findings,
+    overrides: carried,
   });
 
   console.log("");
