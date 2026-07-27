@@ -23,16 +23,32 @@ one: change the work to address it, or accept it deliberately. `fixed` and
 `accepted` both close a finding, and both demand a substantive reason that is
 written permanently into the ledger and the final audit.
 
-When every finding is accounted for, the phase is complete. **Do not re-run to
-confirm a fix.** Re-run only when the changes are substantial enough to deserve
-a fresh look, and never more than three times in total.
+When every finding is accounted for, the phase is complete. **There is no second
+run.** Not to confirm a fix, not because the changes were large, not because a
+finding looked serious. One round of independent review, then the orchestrator
+decides, and the phase closes.
+
+The reason is measured rather than assumed. Under a three-run cap a single slice
+consumed three worker attempts and three review rounds across several hours,
+because each round found new material in the work the previous round had caused,
+and every round cost a full build-and-review cycle. Review is very good at
+finding the first tranche of defects in a piece of work and much worse at
+converging, because correcting anything gives the next round something new to
+read. Rounds two and three are not free extra assurance; they are the most
+expensive part of the pipeline.
+
+What replaces them is the orchestrator's judgement. It reads every finding once,
+decides each one on the record, and lives with the decision. A finding it cannot
+decide is not a reason for another review, because another review cannot supply
+what is missing: that is a plan revision, a tooling change, or a developer
+decision.
 
 This is not a loosening. Reviewers are always consulted, always report at the
 severity they believe, and every decision carries a name and a reason. What it
 prevents is the failure mode where a checkpoint can only be satisfied by
 agreement between parties that need not agree. A gate nothing can satisfy is not
-a gate, and a finding that survives three runs is structural: it needs a plan
-revision, a tooling change, or a developer decision, none of which another
+a gate. And a finding the orchestrator cannot decide is structural: it needs a
+plan revision, a tooling change, or a developer decision, none of which another
 review can supply.
 
 ## Why unanimity, and why only one pass
