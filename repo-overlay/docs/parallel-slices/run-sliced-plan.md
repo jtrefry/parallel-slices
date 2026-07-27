@@ -192,7 +192,14 @@ only after both pass.
      --worker-id <worker-id>
    ```
 
-4. Review the integrated diff independently. When
+4. Review the integrated diff independently. **Freeze the goal checkout while
+   it runs.** A review fingerprints the repository it is judging, so any commit
+   the root makes meanwhile, even to an unrelated contract document, invalidates
+   the whole run: it exits `STALE`, having spent every reviewer's time on a tree
+   that no longer exists. Land whatever else you were going to commit before
+   starting the review, or hold it until the review returns. Nothing about the
+   goal branch may move between the integrated gate and the review's verdict.
+   When
    `.parallel-slices/review.json` is enabled, run the configured review
    orchestrator with `--worker-id <worker-id>` so approval and progress are
    tracked and its JSON and Markdown artifacts are generated. When it is
@@ -268,6 +275,49 @@ branch and state, rerun `slice-graph.mjs ready`. The next Ready Slices may diffe
 as accepted dependencies unlock later work or in-progress recovery narrows what
 can proceed. An active worker for a slice is not created again; other newly
 ready, non-conflicting slices may start immediately.
+
+## Run to completion without the developer
+
+The developer's involvement ends when the plan is approved. From there the
+orchestrator carries the milestone to its terminal state on its own, and the
+only thing left for a person is the deployment procedure the run hands them.
+
+That is a design constraint on planning, not a licence to guess. Every
+authorization the run will need has to be collected while the plan is being
+agreed and recorded in the plan: publishing a shared library the milestone
+plainly depends on, opening the goal pull request, anything else external.
+Discovering halfway through that the plan implied an action nobody authorized is
+a planning failure.
+
+So decide rather than ask. Reviews inform the decision, findings are decided and
+recorded, a wrong premise is refuted with evidence, and a blocked slice is
+rescheduled or reassigned through a governed correction. Ask only for what no
+amount of further work can resolve.
+
+### When you must stop, say so unmissably
+
+An unfinished checklist looks identical whether work is running or stopped dead,
+and the developer will assume it is running. Print this banner **first**, before
+any explanation, whenever the run is genuinely halted:
+
+```text
+🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑
+
+        ✋  S T O P  —  W A I T I N G  O N  Y O U
+
+     Nothing is running. No agent, no build, no test.
+     I cannot continue until you answer the question below.
+
+🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑
+```
+
+Then state the decision in one or two sentences, recommend one option, and list
+the alternatives. Ask for **everything** outstanding in a single stop rather than
+returning to the developer repeatedly.
+
+Never print it while work continues in the background: a banner that cries wolf
+is worse than none. When work is still running, say what is running, so an
+incomplete checklist is never ambiguous.
 
 ## Scope and safety boundary
 
