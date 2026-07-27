@@ -287,6 +287,20 @@ export function renderReviewMarkdown(ledger) {
       lines.push("");
     }
     lines.push("### Findings", "", renderFindings(attempt.findings));
+    if (attempt.overrides?.length) {
+      lines.push(
+        "### Orchestrator decisions",
+        "",
+        "| Finding | Severity | Disposition | Decided | Reason |",
+        "| --- | --- | --- | --- | --- |",
+      );
+      for (const entry of attempt.overrides) {
+        lines.push(
+          `| ${markdownCell(entry.findingId)} | ${markdownCell(entry.severity)} | ${markdownCell(entry.disposition ?? "accepted")} | ${markdownCell(entry.decidedAt)} | ${markdownCell(entry.reason)} |`,
+        );
+      }
+      lines.push("");
+    }
   }
   return `${lines.join("\n").trimEnd()}\n`;
 }

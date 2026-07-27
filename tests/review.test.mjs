@@ -37,7 +37,10 @@ import {
   applyReviewerResponse,
   evaluateConsensus,
 } from "../repo-overlay/scripts/parallel-slices/review-state.mjs";
-import { applyOverrides } from "../repo-overlay/scripts/parallel-slices/review-override.mjs";
+import {
+  applyOverrides,
+  parseArguments as parseOverrideArguments,
+} from "../repo-overlay/scripts/parallel-slices/review-override.mjs";
 import { parseReviewArguments } from "../repo-overlay/scripts/parallel-slices/review.mjs";
 import { run, write } from "./helpers/fixture.mjs";
 
@@ -458,6 +461,26 @@ test("a fixed finding closes like an accepted one, and disposition is recorded",
   assert.equal(second.outstanding.length, 0);
   assert.equal(ledger.overrides[1].disposition, "accepted");
   assert.equal(ledger.status, "approved_with_overrides");
+});
+
+test("every documented override flag is accepted by the parser", () => {
+  const parsed = parseOverrideArguments([
+    "--artifact",
+    "docs/plans/reviews/x/planning.json",
+    "--finding",
+    "F001",
+    "--disposition",
+    "fixed",
+    "--worker-id",
+    "w-1",
+    "--reason",
+    "A substantive reason recorded permanently.",
+  ]);
+  assert.equal(parsed.artifact, "docs/plans/reviews/x/planning.json");
+  assert.deepEqual(parsed.findings, ["F001"]);
+  assert.equal(parsed.disposition, "fixed");
+  assert.equal(parsed.workerId, "w-1");
+  assert.match(parsed.reason, /substantive/);
 });
 
 test("an unknown disposition is refused", () => {

@@ -245,9 +245,22 @@ export function validatePlanningReviewEvidence(root, statePath) {
   ) {
     fail("latest planning-review attempt is not approved");
   }
+  // A decision that says "fixed" means the map was changed in response, so its
+  // fingerprint is expected to have moved. Requiring it to match would force a
+  // re-run to bless every fix, which is the loop this design exists to avoid.
+  // An approval carrying no decision must still match exactly, so an untouched
+  // approval can never be reused for different work.
+  const decidedFixes = (latest.overrides ?? []).filter(
+    (entry) => entry.disposition === "fixed",
+  );
   if (latest.contractFingerprint !== target.contractFingerprint) {
-    fail(
-      "planning-review approval is stale for the active execution map; rerun the planning review",
+    if (!decidedFixes.length) {
+      fail(
+        "planning-review approval is stale for the active execution map; rerun the planning review",
+      );
+    }
+    console.error(
+      `planning-review approval was decided against ${latest.contractFingerprint} and the map has since changed to ${target.contractFingerprint}; ${decidedFixes.length} finding(s) were recorded as fixed`,
     );
   }
   if (!latest.rounds?.length || !latest.configuration?.reviewers?.length) {
@@ -288,8 +301,16 @@ export function validatePlanningReviewEvidence(root, statePath) {
       );
     }
   }
-  const blocking = (latest.findings ?? []).filter((finding) =>
-    new Set(["critical", "high"]).has(finding.severity),
+  // A finding the orchestrator decided is closed, whether by changing the work
+  // or by accepting it deliberately. Only findings nobody accounted for are
+  // still open.
+  const decided = new Set(
+    (latest.overrides ?? []).map((entry) => entry.findingId),
+  );
+  const blocking = (latest.findings ?? []).filter(
+    (finding) =>
+      new Set(["critical", "high"]).has(finding.severity) &&
+      !decided.has(finding.id),
   );
   if (blocking.length) {
     fail("planning-review approval retains an open blocking finding");

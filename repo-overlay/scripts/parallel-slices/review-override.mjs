@@ -37,6 +37,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { realpathSync } from "node:fs";
 
+import { renderReviewMarkdown } from "./review-artifact.mjs";
 import {
   primaryRepositoryRoot,
   updateIntegrationTracking,
@@ -128,31 +129,6 @@ export function applyOverrides(
   return { record, overridden: [...overridden], outstanding };
 }
 
-function overrideMarkdown(ledger) {
-  const record = locateReviewRecord(ledger);
-  if (!record.overrides?.length) return "";
-  const lines = [
-    "",
-    "## Human overrides",
-    "",
-    "A person accepted these findings deliberately. Each entry is permanent and",
-    "is carried into the final audit.",
-    "",
-    "| Finding | Severity | Raised by | Decided | Reason |",
-    "| --- | --- | --- | --- | --- |",
-  ];
-  for (const entry of record.overrides) {
-    const reason = String(entry.reason)
-      .replace(/\|/g, "\\|")
-      .replace(/\n/g, " ");
-    lines.push(
-      `| ${entry.findingId} | ${entry.severity} | ${entry.raisedBy} | ${entry.decidedAt} | ${reason} |`,
-    );
-  }
-  lines.push("");
-  return lines.join("\n");
-}
-
 export async function overrideReviewFindings(root, options) {
   const artifactPath = options.artifact;
   const absolute = resolve(root, artifactPath);
@@ -177,16 +153,12 @@ export async function overrideReviewFindings(root, options) {
   );
 
   writeFileSync(absolute, `${JSON.stringify(ledger, null, 2)}\n`);
+  // Regenerate the view from the ledger rather than appending to it, so the two
+  // always agree. A verifier that re-renders and compares byte for byte would
+  // otherwise reject every decision this command records.
   const markdownPath = absolute.replace(/\.json$/, ".md");
   if (existsSync(markdownPath)) {
-    const existing = readFileSync(markdownPath, "utf8").replace(
-      /\n## Human overrides\n[\s\S]*?(?=\n## |$)/,
-      "",
-    );
-    writeFileSync(
-      markdownPath,
-      `${existing.trimEnd()}\n${overrideMarkdown(ledger)}`,
-    );
+    writeFileSync(markdownPath, renderReviewMarkdown(ledger));
   }
 
   const record = locateReviewRecord(ledger);
@@ -228,12 +200,20 @@ export async function overrideReviewFindings(root, options) {
   return { status: record.status, exitCode: 0 };
 }
 
-function parseArguments(argv) {
+export function parseArguments(argv) {
   const options = { findings: [], all: false };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--all") options.all = true;
-    else if (["--artifact", "--finding", "--reason"].includes(argument)) {
+    else if (
+      [
+        "--artifact",
+        "--finding",
+        "--reason",
+        "--disposition",
+        "--worker-id",
+      ].includes(argument)
+    ) {
       const value = argv[index + 1];
       if (!value) fail(`${argument} requires a value`);
       if (argument === "--artifact")
