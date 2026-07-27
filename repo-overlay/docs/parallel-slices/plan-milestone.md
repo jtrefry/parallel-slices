@@ -103,6 +103,21 @@ The review writes `docs/plans/reviews/<feature>/product-plan.json` and its
 Markdown view, and fingerprints the plan, so an approval is tied to exact
 content and editing the plan afterwards invalidates it.
 
+## Authorizations the run will need
+
+The plan is the last point at which the developer is involved. Everything the
+run will need permission for must be settled here and written into the plan:
+
+- publishing a shared library or any package the milestone depends on;
+- pushing the goal branch and opening its pull request;
+- any external system the work will touch; and
+- who performs the deployment, and from which recorded procedure.
+
+Ask for all of it in one conversation, record what was granted and what was
+withheld, and treat a withheld authorization as a constraint the slices must be
+compiled around. An autonomous run that stops halfway to ask for something the
+plan already implied has failed at this step, not at the step where it stopped.
+
 ## Product Plan approval checkpoint
 
 Present the reviewers' verdicts alongside the human approval surface, so the

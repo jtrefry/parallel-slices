@@ -4,6 +4,14 @@ A slice worker is a fresh, bounded implementation agent. It is not the goal
 controller, does not choose another slice, does not edit aggregate run state,
 and does not publish or complete the milestone.
 
+**Its candidate commit is authorized by the assignment.** The orchestrator
+directing a worker to commit is the authorization to commit, and the worker does
+not stop to seek a second one. The commit is local to the worker's own detached
+worktree and is never pushed, so it is fully reversible and reviewable. A worker
+that finishes its change, passes its gate, and then refuses to commit has
+stalled the run for nothing. What a worker must never do is merge, push, tag,
+open a pull request, publish a package, deploy, or mutate any external system.
+
 ## Required assignment
 
 The root prompt must supply the exact worktree, worker ID, base commit, approved
