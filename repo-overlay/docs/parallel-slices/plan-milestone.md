@@ -82,10 +82,10 @@ When every finding is accounted for, the phase is complete. Do not re-run to
 confirm a fix; the orchestrator's decision is the record, and requiring a fresh
 verdict to bless each change is what turns one review into an unbounded series.
 
-Re-run only when you judge that the changes are substantial enough to deserve a
-fresh look. **Three runs is the hard maximum.** A finding that survives three
-runs is structural: it needs a plan revision, a tooling change, or a developer
-decision, none of which another review can supply.
+**There is no second run.** Not to confirm a fix, not because the changes were
+large. One round, then the orchestrator decides and the phase closes. A finding
+it cannot decide is structural: it needs a plan revision, a tooling change, or a
+developer decision, none of which another review can supply.
 
 Exit `0` is approved, `10` is changes requested. Do not present an unreviewed
 plan for approval, and do not ask the developer to adjudicate a finding you can
