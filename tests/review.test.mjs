@@ -37,6 +37,7 @@ import {
   applyReviewerResponse,
   evaluateConsensus,
 } from "../repo-overlay/scripts/parallel-slices/review-state.mjs";
+import { applyOverrides } from "../repo-overlay/scripts/parallel-slices/review-override.mjs";
 import { parseReviewArguments } from "../repo-overlay/scripts/parallel-slices/review.mjs";
 import { run, write } from "./helpers/fixture.mjs";
 
@@ -429,6 +430,45 @@ test("an overridden blocking finding no longer blocks, and an outstanding one st
   assert.equal(decided.approved, true);
   assert.equal(decided.allApproved, false);
   assert.deepEqual(decided.blockingFindingIds, []);
+});
+
+test("a fixed finding closes like an accepted one, and disposition is recorded", () => {
+  const ledger = {
+    findings: [
+      { id: "F001", severity: "high", title: "A", raisedBy: "one" },
+      { id: "F002", severity: "high", title: "B", raisedBy: "two" },
+    ],
+  };
+  const first = applyOverrides(
+    ledger,
+    ["F001"],
+    "Changed the work.",
+    "t0",
+    "fixed",
+  );
+  assert.equal(first.outstanding.length, 1);
+  assert.equal(ledger.overrides[0].disposition, "fixed");
+
+  const second = applyOverrides(
+    ledger,
+    ["F002"],
+    "Accepted deliberately.",
+    "t1",
+  );
+  assert.equal(second.outstanding.length, 0);
+  assert.equal(ledger.overrides[1].disposition, "accepted");
+  assert.equal(ledger.status, "approved_with_overrides");
+});
+
+test("an unknown disposition is refused", () => {
+  const ledger = {
+    findings: [{ id: "F001", severity: "high", title: "A", raisedBy: "one" }],
+  };
+  assert.throws(
+    () =>
+      applyOverrides(ledger, ["F001"], "Some reason here.", "t0", "ignored"),
+    /disposition must be one of/,
+  );
 });
 
 test("consensus is unchanged when the orchestrator overrides nothing", () => {
