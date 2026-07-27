@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { assertRunLock } from "./run-lock.mjs";
 import { readRunState } from "./run-state.mjs";
 import { validatePlanningReviewEvidence } from "./planning-review.mjs";
+import { projectStages, readProjectState } from "./project-state.mjs";
 import { loadReviewConfig } from "./review-config.mjs";
 import {
   claimIntegrationAttempt,
@@ -107,6 +108,18 @@ export function createSliceWorktree(root, options) {
   if (!manifest) {
     fail(
       `scope manifest is not in the next ready parallel set: ${options.scopeFile}`,
+    );
+  }
+  // Creating a worker admits this slice to execution, so its declared project
+  // stage must already be satisfied. Failing here costs nothing; failing after
+  // the work is built costs the whole slice.
+  const projectState = readProjectState(root);
+  if (
+    projectStages.indexOf(projectState.stage) <
+    projectStages.indexOf(manifest.minimum_stage)
+  ) {
+    fail(
+      `project stage ${projectState.stage} does not satisfy minimum_stage=${manifest.minimum_stage} for slice ${manifest.slice}`,
     );
   }
   const active = activeMetadata(root, options.state);

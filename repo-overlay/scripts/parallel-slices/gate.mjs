@@ -94,7 +94,11 @@ export function runGate(argv = process.argv.slice(2)) {
 
   const config = loadQualityConfig(root);
   const manifest = parseManifestText(readFileSync(scopePath, "utf8"));
-  validateManifest(manifest, scopeFile, root, config);
+  // Admitting a slice to execution, so the project stage must already satisfy
+  // this manifest's declared minimum.
+  validateManifest(manifest, scopeFile, root, config, {
+    enforceProjectStage: true,
+  });
   requireCommittedContract(root, [manifest.plan, scopeFile]);
   if (manifest.version === "2") requireTrackedPaths(root, [manifest.state]);
 

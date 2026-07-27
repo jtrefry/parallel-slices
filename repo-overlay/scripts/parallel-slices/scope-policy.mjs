@@ -267,7 +267,13 @@ export function validateScopeCoverage(manifest, options = {}) {
   return coverage;
 }
 
-export function validateManifest(manifest, scopeFile, root, config) {
+export function validateManifest(
+  manifest,
+  scopeFile,
+  root,
+  config,
+  options = {},
+) {
   if (!new Set(["1", "2"]).has(manifest.version)) {
     fail("scope manifest version must be 1 or 2");
   }
@@ -368,14 +374,22 @@ export function validateManifest(manifest, scopeFile, root, config) {
   ) {
     fail("minimum_stage must be contract-ready or foundation-ready");
   }
-  const projectState = readProjectState(root);
-  if (
-    projectStages.indexOf(projectState.stage) <
-    projectStages.indexOf(manifest.minimum_stage)
-  ) {
-    fail(
-      `project stage ${projectState.stage} does not satisfy minimum_stage=${manifest.minimum_stage}`,
-    );
+  // The project stage is a readiness gate for running a slice, not a property of
+  // the compiled map. A milestone whose foundation slice advances the stage must
+  // be able to declare `foundation-ready` on the slices that follow it while the
+  // project is still `contract-ready`, or the documented rule that product
+  // slices use `foundation-ready` could never be satisfied by any compilation.
+  // Callers that admit a slice to execution pass `enforceProjectStage`.
+  if (options.enforceProjectStage) {
+    const projectState = readProjectState(root);
+    if (
+      projectStages.indexOf(projectState.stage) <
+      projectStages.indexOf(manifest.minimum_stage)
+    ) {
+      fail(
+        `project stage ${projectState.stage} does not satisfy minimum_stage=${manifest.minimum_stage}`,
+      );
+    }
   }
   if (!releaseClasses.has(manifest.release_notes)) {
     fail("release_notes must be none or developer");

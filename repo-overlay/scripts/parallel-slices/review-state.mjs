@@ -84,7 +84,19 @@ dependency and lock correctness; safe concurrency; negative outcomes; and
 non-goal preservation. Request changes for an omitted path, unjustified
 not-applicable disposition, changed subsystem or policy, hidden migration or
 external action, or any slice that cannot be completed from its worker packet.
-Do not approve based only on manifest self-assertions.`
+Do not approve based only on manifest self-assertions.
+
+Judge concurrency, dependencies, and failure contingencies against how slices
+actually execute. Every slice is built by a fresh worker in its own detached
+Git worktree, created at that slice's assigned base commit, with its own
+checkout and its own dependency install. Concurrent slices share no working
+tree, no lockfile state, and no installed modules. A dependency edge means the
+downstream slice consumes an accepted upstream outcome, not merely that it runs
+afterwards. So a change one slice makes to a manifest, lockfile, or shared file
+is invisible to a sibling running from an earlier base, and a slice that fails
+does not contaminate siblings that never carried its change. Do not report a
+fallback or contingency as unrealizable on the assumption that slices share one
+checkout.`
       : `Read the root instructions, plan, scope manifest, authorized patch, changed
 files, tests, release notes, and relevant surrounding code. Review security,
 correctness, UX, accessibility, selected-architecture boundaries,
