@@ -228,12 +228,20 @@ export async function overrideReviewFindings(root, options) {
   return { status: record.status, exitCode: 0 };
 }
 
-function parseArguments(argv) {
+export function parseArguments(argv) {
   const options = { findings: [], all: false };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--all") options.all = true;
-    else if (["--artifact", "--finding", "--reason"].includes(argument)) {
+    else if (
+      [
+        "--artifact",
+        "--finding",
+        "--reason",
+        "--disposition",
+        "--worker-id",
+      ].includes(argument)
+    ) {
       const value = argv[index + 1];
       if (!value) fail(`${argument} requires a value`);
       if (argument === "--artifact")
