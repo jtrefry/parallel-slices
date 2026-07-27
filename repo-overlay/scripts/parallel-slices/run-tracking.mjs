@@ -979,10 +979,16 @@ export function updateIntegrationTracking(root, workerId, phase, fields = {}) {
         "candidate_applied requires the matching claimed candidate and goal base",
       );
     }
+    // review_running is the ordinary path. review_failed is the orchestrator
+    // deciding afterwards: reviews inform the decision rather than holding a
+    // veto, so an accepted finding must be able to unblock a slice that already
+    // recorded a failure. The accepted result still has to say so explicitly.
     if (
       phase === "review_approved" &&
-      (integration.phase !== "review_running" ||
-        fields.review?.status !== "APPROVED")
+      (!["review_running", "review_failed"].includes(integration.phase) ||
+        !["APPROVED", "APPROVED_WITH_OVERRIDES"].includes(
+          fields.review?.status,
+        ))
     ) {
       fail("review_approved requires a tracked approved review result");
     }

@@ -67,8 +67,29 @@ other, a conflict with the root instructions or the installed architecture, a
 lifecycle that cannot be realised, and a definition of done containing an item
 nothing in the plan delivers.
 
-Fix the findings and run it again. Exit code `0` means approved; `10` means
-changes are requested.
+Review runs **once** by default. Read every finding and decide each one: change
+the work to address it, or accept it deliberately. Record both with
+`review-override.mjs`, which demands a substantive reason and writes the
+decision permanently into the ledger and the final audit:
+
+```bash
+node scripts/parallel-slices/review-override.mjs \
+  --artifact <review.json> --finding <id> --disposition fixed \
+  --reason "<what changed and why that addresses it>"
+```
+
+When every finding is accounted for, the phase is complete. Do not re-run to
+confirm a fix; the orchestrator's decision is the record, and requiring a fresh
+verdict to bless each change is what turns one review into an unbounded series.
+
+Re-run only when you judge that the changes are substantial enough to deserve a
+fresh look. **Three runs is the hard maximum.** A finding that survives three
+runs is structural: it needs a plan revision, a tooling change, or a developer
+decision, none of which another review can supply.
+
+Exit `0` is approved, `10` is changes requested. Do not present an unreviewed
+plan for approval, and do not ask the developer to adjudicate a finding you can
+decide and sign yourself.
 
 This ordering is deliberate. Human approval is the most expensive gate in the
 system, and it was the only one nothing checked first. A plan carrying an

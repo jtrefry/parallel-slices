@@ -37,6 +37,7 @@ import {
   applyReviewerResponse,
   evaluateConsensus,
 } from "../repo-overlay/scripts/parallel-slices/review-state.mjs";
+import { applyOverrides } from "../repo-overlay/scripts/parallel-slices/review-override.mjs";
 import { parseReviewArguments } from "../repo-overlay/scripts/parallel-slices/review.mjs";
 import { run, write } from "./helpers/fixture.mjs";
 
@@ -383,6 +384,106 @@ test("a high finding blocks even when every reviewer approves", () => {
   assert.equal(consensus.allApproved, true);
   assert.equal(consensus.approved, false);
   assert.deepEqual(consensus.blockingFindingIds, ["F001"]);
+});
+
+test("an overridden blocking finding no longer blocks, and an outstanding one still does", () => {
+  const reviewers = ["one", "two"];
+  const attempt = { findings: [], nextFindingNumber: 1, rounds: [] };
+  const round = { number: 1, turns: [] };
+  attempt.rounds.push(round);
+  applyReviewerResponse(
+    attempt,
+    round,
+    { id: reviewers[0], provider: "codex", version: "codex test" },
+    response({
+      verdict: "request_changes",
+      summary: "Two blocking defects remain.",
+      findings: [highFinding(), highFinding()],
+    }),
+    10,
+  );
+  applyReviewerResponse(
+    attempt,
+    round,
+    { id: reviewers[1], provider: "claude-code", version: "claude test" },
+    response({ summary: "This reviewer found nothing." }),
+    11,
+  );
+  assert.equal(evaluateConsensus(attempt, round, reviewers).approved, false);
+
+  // Accepting one of two leaves the other outstanding, so it still blocks.
+  attempt.overrides = [
+    { findingId: "F001", reason: "Accepted on the record." },
+  ];
+  const partial = evaluateConsensus(attempt, round, reviewers);
+  assert.equal(partial.approved, false);
+  assert.deepEqual(partial.blockingFindingIds, ["F002"]);
+
+  // Accepting every blocking finding lets the orchestrator's decision stand in
+  // place of unanimity, which is what keeps the workflow completable when
+  // reviewers never converge.
+  attempt.overrides.push({
+    findingId: "F002",
+    reason: "Accepted on the record.",
+  });
+  const decided = evaluateConsensus(attempt, round, reviewers);
+  assert.equal(decided.approved, true);
+  assert.equal(decided.allApproved, false);
+  assert.deepEqual(decided.blockingFindingIds, []);
+});
+
+test("a fixed finding closes like an accepted one, and disposition is recorded", () => {
+  const ledger = {
+    findings: [
+      { id: "F001", severity: "high", title: "A", raisedBy: "one" },
+      { id: "F002", severity: "high", title: "B", raisedBy: "two" },
+    ],
+  };
+  const first = applyOverrides(
+    ledger,
+    ["F001"],
+    "Changed the work.",
+    "t0",
+    "fixed",
+  );
+  assert.equal(first.outstanding.length, 1);
+  assert.equal(ledger.overrides[0].disposition, "fixed");
+
+  const second = applyOverrides(
+    ledger,
+    ["F002"],
+    "Accepted deliberately.",
+    "t1",
+  );
+  assert.equal(second.outstanding.length, 0);
+  assert.equal(ledger.overrides[1].disposition, "accepted");
+  assert.equal(ledger.status, "approved_with_overrides");
+});
+
+test("an unknown disposition is refused", () => {
+  const ledger = {
+    findings: [{ id: "F001", severity: "high", title: "A", raisedBy: "one" }],
+  };
+  assert.throws(
+    () =>
+      applyOverrides(ledger, ["F001"], "Some reason here.", "t0", "ignored"),
+    /disposition must be one of/,
+  );
+});
+
+test("consensus is unchanged when the orchestrator overrides nothing", () => {
+  const reviewers = ["one"];
+  const attempt = {
+    findings: [],
+    nextFindingNumber: 1,
+    rounds: [],
+    overrides: [],
+  };
+  const round = { number: 1, turns: [] };
+  attempt.rounds.push(round);
+  attempt.findings.push({ ...highFinding(), id: "F001", raisedBy: "one" });
+  round.turns.push({ reviewerId: "one", verdict: "approve" });
+  assert.equal(evaluateConsensus(attempt, round, reviewers).approved, false);
 });
 
 test("creates an immutable review snapshot that represents tracked deletions", () => {

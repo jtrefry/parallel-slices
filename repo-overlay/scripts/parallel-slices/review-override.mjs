@@ -37,6 +37,11 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { realpathSync } from "node:fs";
 
+import {
+  primaryRepositoryRoot,
+  updateIntegrationTracking,
+} from "./run-tracking.mjs";
+
 const MINIMUM_REASON = 40;
 
 function repositoryRoot() {
@@ -61,7 +66,23 @@ export function locateReviewRecord(ledger) {
   fail("review artifact has no findings to override");
 }
 
-export function applyOverrides(ledger, requested, reason, decidedAt) {
+// A finding is accounted for in one of two ways, and both are decisions the
+// orchestrator owns and signs. `fixed` means the work changed to address it.
+// `accepted` means it stands and the risk is taken deliberately. Either closes
+// the finding, because requiring a fresh review to confirm a fix is what turns
+// one review into an unbounded series.
+export const dispositions = Object.freeze(["accepted", "fixed"]);
+
+export function applyOverrides(
+  ledger,
+  requested,
+  reason,
+  decidedAt,
+  disposition = "accepted",
+) {
+  if (!dispositions.includes(disposition)) {
+    fail(`disposition must be one of: ${dispositions.join(", ")}`);
+  }
   const record = locateReviewRecord(ledger);
   const findings = record.findings || [];
   if (!findings.length)
@@ -86,6 +107,7 @@ export function applyOverrides(ledger, requested, reason, decidedAt) {
       severity: finding.severity,
       title: finding.title,
       raisedBy: finding.raisedBy,
+      disposition,
       reason,
       decidedAt,
     });
@@ -151,6 +173,7 @@ export async function overrideReviewFindings(root, options) {
     options.all ? "all" : options.findings,
     reason,
     decidedAt,
+    options.disposition || "accepted",
   );
 
   writeFileSync(absolute, `${JSON.stringify(ledger, null, 2)}\n`);
@@ -167,9 +190,11 @@ export async function overrideReviewFindings(root, options) {
   }
 
   const record = locateReviewRecord(ledger);
-  console.log(`overrode ${overridden.length} finding(s) in ${artifactPath}`);
+  console.log(`resolved ${overridden.length} finding(s) in ${artifactPath}`);
   for (const entry of record.overrides) {
-    console.log(`  ${entry.findingId}  ${entry.severity}  ${entry.title}`);
+    console.log(
+      `  ${entry.findingId}  ${entry.severity}  ${entry.disposition ?? "accepted"}  ${entry.title}`,
+    );
   }
   console.log("");
   if (outstanding.length) {
@@ -177,6 +202,26 @@ export async function overrideReviewFindings(root, options) {
       `still blocked by ${outstanding.length} finding(s): ${outstanding.map((f) => f.id).join(", ")}`,
     );
     return { status: "changes_requested", exitCode: 10 };
+  }
+  // A slice review records its outcome in run tracking, and acceptance reads
+  // that rather than the ledger. Without this the decision would sit in the
+  // artifact while the slice stayed blocked, which is the deadlock this command
+  // exists to break.
+  if (options.workerId) {
+    updateIntegrationTracking(
+      primaryRepositoryRoot(root),
+      options.workerId,
+      "review_approved",
+      {
+        review: {
+          status: "APPROVED_WITH_OVERRIDES",
+          artifact: artifactPath,
+          overrides: record.overrides.map((entry) => entry.findingId),
+        },
+        blocker: null,
+      },
+    );
+    console.log(`recorded review_approved for worker ${options.workerId}`);
   }
   console.log(`status: ${record.status}`);
   console.log("This override is permanent and appears in the final audit.");
@@ -194,13 +239,15 @@ function parseArguments(argv) {
       if (argument === "--artifact")
         options.artifact = value.replace(/^\.\//, "");
       else if (argument === "--finding") options.findings.push(value);
+      else if (argument === "--worker-id") options.workerId = value;
+      else if (argument === "--disposition") options.disposition = value;
       else options.reason = value;
       index += 1;
     } else fail(`unknown argument: ${argument}`);
   }
   if (!options.artifact) {
     fail(
-      "usage: review-override.mjs --artifact <review.json> (--finding <id> | --all) --reason <text>",
+      "usage: review-override.mjs --artifact <review.json> (--finding <id> | --all) --reason <text> [--disposition accepted|fixed] [--worker-id <id>]",
     );
   }
   if (!options.all && !options.findings.length) {

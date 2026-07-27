@@ -46,11 +46,24 @@ export function evaluateConsensus(attempt, round, reviewerIds) {
   const allApproved = reviewerIds.every(
     (reviewerId) => verdicts.get(reviewerId) === "approve",
   );
-  const blocking = attempt.findings.filter((finding) =>
-    blockingSeverities.includes(finding.severity),
+  // Reviewers inform the decision; they do not hold a veto over it. A finding
+  // the orchestrator has accepted on the record no longer blocks, because the
+  // accountable judgement has already been made and written down permanently.
+  // Without this the workflow can deadlock: reviewers that never reach
+  // unanimity leave no path forward, and a gate nothing can satisfy stops being
+  // a gate.
+  const overridden = new Set(
+    (attempt.overrides ?? []).map((entry) => entry.findingId),
+  );
+  const blocking = attempt.findings.filter(
+    (finding) =>
+      blockingSeverities.includes(finding.severity) &&
+      !overridden.has(finding.id),
   );
   return {
-    approved: allApproved && blocking.length === 0,
+    // Unchanged when nothing was overridden. Once the orchestrator has accepted
+    // every blocking finding, its decision stands in place of unanimity.
+    approved: blocking.length === 0 && (allApproved || overridden.size > 0),
     allApproved,
     blockingFindingIds: blocking.map((finding) => finding.id),
   };
@@ -84,7 +97,19 @@ dependency and lock correctness; safe concurrency; negative outcomes; and
 non-goal preservation. Request changes for an omitted path, unjustified
 not-applicable disposition, changed subsystem or policy, hidden migration or
 external action, or any slice that cannot be completed from its worker packet.
-Do not approve based only on manifest self-assertions.`
+Do not approve based only on manifest self-assertions.
+
+Judge concurrency, dependencies, and failure contingencies against how slices
+actually execute. Every slice is built by a fresh worker in its own detached
+Git worktree, created at that slice's assigned base commit, with its own
+checkout and its own dependency install. Concurrent slices share no working
+tree, no lockfile state, and no installed modules. A dependency edge means the
+downstream slice consumes an accepted upstream outcome, not merely that it runs
+afterwards. So a change one slice makes to a manifest, lockfile, or shared file
+is invisible to a sibling running from an earlier base, and a slice that fails
+does not contaminate siblings that never carried its change. Do not report a
+fallback or contingency as unrealizable on the assumption that slices share one
+checkout.`
       : `Read the root instructions, plan, scope manifest, authorized patch, changed
 files, tests, release notes, and relevant surrounding code. Review security,
 correctness, UX, accessibility, selected-architecture boundaries,
@@ -99,9 +124,11 @@ execute mutating commands, contact external systems, or change Git state.
 
 You are reviewing independently. Other reviewers examine the same work at the
 same time, you will not see their conclusions, and they will not see yours.
-Report what you find. Every configured reviewer must approve for this to pass,
-so a single genuine problem is enough to block it, and agreeing with an
-imagined consensus helps nobody.
+Report what you find, at the severity you actually believe. Your verdict is one
+independent input to the orchestrator's decision, not a veto: it may accept a
+finding you raise, on the record and with a stated reason. Report a problem
+because it is real, not to force an outcome, and do not soften one to agree with
+an imagined consensus.
 
 ## Contract
 

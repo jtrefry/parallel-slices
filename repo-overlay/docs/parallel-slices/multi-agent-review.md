@@ -9,13 +9,31 @@ four sentences:
 
 1. Every configured reviewer reads the same packet, **once**, in isolation.
 2. Reviewers never see each other's verdicts and never negotiate.
-3. It passes only if **every** reviewer approves and nothing critical or high
-   was found.
-4. Anything less returns the findings to the controller, which fixes the work
-   and runs review again.
+3. It passes when every reviewer approves with nothing critical or high, or when
+   the orchestrator has accounted for every blocking finding on the record.
+4. Reviewers inform that decision. They do not hold a veto over it.
 
 That is the entire model. No rounds, no reconciliation, no votes, no
 cross-referencing between reviewers.
+
+## The orchestrator decides
+
+Review runs once. The orchestrator then reads every finding and decides each
+one: change the work to address it, or accept it deliberately. `fixed` and
+`accepted` both close a finding, and both demand a substantive reason that is
+written permanently into the ledger and the final audit.
+
+When every finding is accounted for, the phase is complete. **Do not re-run to
+confirm a fix.** Re-run only when the changes are substantial enough to deserve
+a fresh look, and never more than three times in total.
+
+This is not a loosening. Reviewers are always consulted, always report at the
+severity they believe, and every decision carries a name and a reason. What it
+prevents is the failure mode where a checkpoint can only be satisfied by
+agreement between parties that need not agree. A gate nothing can satisfy is not
+a gate, and a finding that survives three runs is structural: it needs a plan
+revision, a tooling change, or a developer decision, none of which another
+review can supply.
 
 ## Why unanimity, and why only one pass
 

@@ -233,10 +233,15 @@ export function validatePlanningReviewEvidence(root, statePath) {
     fail("planning-review artifact belongs to a different planning contract");
   }
   const latest = ledger.attempts.at(-1);
+  // `approved_with_overrides` is an approval carrying the orchestrator's
+  // accountable decision. review-override.mjs only sets it once every critical
+  // and high finding has a recorded, permanent acceptance with a stated reason;
+  // while one is outstanding it sets `changes_requested` instead.
+  const overrideDecision = (latest?.overrides ?? []).length > 0;
   if (
     !latest ||
     latest.reviewKind !== "planning" ||
-    latest.status !== "approved"
+    !["approved", "approved_with_overrides"].includes(latest.status)
   ) {
     fail("latest planning-review attempt is not approved");
   }
@@ -262,8 +267,16 @@ export function validatePlanningReviewEvidence(root, statePath) {
   }
   const finalTurns = latest.rounds.at(-1)?.turns ?? [];
   const finalReviewerIds = finalTurns.map((turn) => turn.reviewerId);
+  // Every configured reviewer must still have been consulted and returned a
+  // verdict. Unanimity is required only when the orchestrator did not decide:
+  // reviews exist to inform that decision, not to hold a veto over it, and a
+  // checkpoint that unanimity alone can satisfy has no path forward when
+  // reviewers never converge.
+  if (JSON.stringify(finalReviewerIds) !== JSON.stringify(reviewerIds)) {
+    fail("planning-review approval lacks a verdict from every reviewer");
+  }
   if (
-    JSON.stringify(finalReviewerIds) !== JSON.stringify(reviewerIds) ||
+    !overrideDecision &&
     finalTurns.some((turn) => turn.verdict !== "approve")
   ) {
     fail("planning-review approval lacks unanimous final-round evidence");
