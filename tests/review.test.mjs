@@ -385,6 +385,67 @@ test("a high finding blocks even when every reviewer approves", () => {
   assert.deepEqual(consensus.blockingFindingIds, ["F001"]);
 });
 
+test("an overridden blocking finding no longer blocks, and an outstanding one still does", () => {
+  const reviewers = ["one", "two"];
+  const attempt = { findings: [], nextFindingNumber: 1, rounds: [] };
+  const round = { number: 1, turns: [] };
+  attempt.rounds.push(round);
+  applyReviewerResponse(
+    attempt,
+    round,
+    { id: reviewers[0], provider: "codex", version: "codex test" },
+    response({
+      verdict: "request_changes",
+      summary: "Two blocking defects remain.",
+      findings: [highFinding(), highFinding()],
+    }),
+    10,
+  );
+  applyReviewerResponse(
+    attempt,
+    round,
+    { id: reviewers[1], provider: "claude-code", version: "claude test" },
+    response({ summary: "This reviewer found nothing." }),
+    11,
+  );
+  assert.equal(evaluateConsensus(attempt, round, reviewers).approved, false);
+
+  // Accepting one of two leaves the other outstanding, so it still blocks.
+  attempt.overrides = [
+    { findingId: "F001", reason: "Accepted on the record." },
+  ];
+  const partial = evaluateConsensus(attempt, round, reviewers);
+  assert.equal(partial.approved, false);
+  assert.deepEqual(partial.blockingFindingIds, ["F002"]);
+
+  // Accepting every blocking finding lets the orchestrator's decision stand in
+  // place of unanimity, which is what keeps the workflow completable when
+  // reviewers never converge.
+  attempt.overrides.push({
+    findingId: "F002",
+    reason: "Accepted on the record.",
+  });
+  const decided = evaluateConsensus(attempt, round, reviewers);
+  assert.equal(decided.approved, true);
+  assert.equal(decided.allApproved, false);
+  assert.deepEqual(decided.blockingFindingIds, []);
+});
+
+test("consensus is unchanged when the orchestrator overrides nothing", () => {
+  const reviewers = ["one"];
+  const attempt = {
+    findings: [],
+    nextFindingNumber: 1,
+    rounds: [],
+    overrides: [],
+  };
+  const round = { number: 1, turns: [] };
+  attempt.rounds.push(round);
+  attempt.findings.push({ ...highFinding(), id: "F001", raisedBy: "one" });
+  round.turns.push({ reviewerId: "one", verdict: "approve" });
+  assert.equal(evaluateConsensus(attempt, round, reviewers).approved, false);
+});
+
 test("creates an immutable review snapshot that represents tracked deletions", () => {
   const root = mkdtempSync(join(tmpdir(), "parallel-slices-review-snapshot-"));
   let snapshot;

@@ -46,11 +46,24 @@ export function evaluateConsensus(attempt, round, reviewerIds) {
   const allApproved = reviewerIds.every(
     (reviewerId) => verdicts.get(reviewerId) === "approve",
   );
-  const blocking = attempt.findings.filter((finding) =>
-    blockingSeverities.includes(finding.severity),
+  // Reviewers inform the decision; they do not hold a veto over it. A finding
+  // the orchestrator has accepted on the record no longer blocks, because the
+  // accountable judgement has already been made and written down permanently.
+  // Without this the workflow can deadlock: reviewers that never reach
+  // unanimity leave no path forward, and a gate nothing can satisfy stops being
+  // a gate.
+  const overridden = new Set(
+    (attempt.overrides ?? []).map((entry) => entry.findingId),
+  );
+  const blocking = attempt.findings.filter(
+    (finding) =>
+      blockingSeverities.includes(finding.severity) &&
+      !overridden.has(finding.id),
   );
   return {
-    approved: allApproved && blocking.length === 0,
+    // Unchanged when nothing was overridden. Once the orchestrator has accepted
+    // every blocking finding, its decision stands in place of unanimity.
+    approved: blocking.length === 0 && (allApproved || overridden.size > 0),
     allApproved,
     blockingFindingIds: blocking.map((finding) => finding.id),
   };
@@ -111,9 +124,11 @@ execute mutating commands, contact external systems, or change Git state.
 
 You are reviewing independently. Other reviewers examine the same work at the
 same time, you will not see their conclusions, and they will not see yours.
-Report what you find. Every configured reviewer must approve for this to pass,
-so a single genuine problem is enough to block it, and agreeing with an
-imagined consensus helps nobody.
+Report what you find, at the severity you actually believe. Your verdict is one
+independent input to the orchestrator's decision, not a veto: it may accept a
+finding you raise, on the record and with a stated reason. Report a problem
+because it is real, not to force an outcome, and do not soften one to agree with
+an imagined consensus.
 
 ## Contract
 
