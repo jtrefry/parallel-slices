@@ -1,7 +1,0 @@
-{
-  "$schema": "./repository.schema.json",
-  "version": 1,
-  "mode": "local-only",
-  "remote": "origin",
-  "baseBranch": "main"
-}

@@ -33,7 +33,7 @@ tooling does not need.
 Changes to installed behavior normally require updates to all applicable
 surfaces:
 
-- the implementation under `repo-overlay/`;
+- the skills under `skills/` and the installer under `scripts/`;
 - installation and verification scripts;
 - unit and isolated installation tests;
 - README package inventory and operating documentation;

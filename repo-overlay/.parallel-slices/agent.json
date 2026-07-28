@@ -1,6 +1,0 @@
-{
-  "$schema": "./agent.schema.json",
-  "version": 2,
-  "enabledControllers": ["cursor", "codex", "claude-code"],
-  "defaultController": "cursor"
-}
