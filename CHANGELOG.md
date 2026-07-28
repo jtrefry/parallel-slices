@@ -10,6 +10,53 @@ releases begin.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-27
+
+A ground-up replacement of the version 1 control plane, informed by a full
+field trial that ported a real application end to end. The trial's verdict
+split cleanly: the method produced quality, the machinery produced downtime.
+Version 2 keeps the first and deletes the second.
+
+### Added
+
+- Three portable skills in the open Agent Skills format, under `skills/`:
+  `plan-milestone`, `build-parallel`, and `review-and-decide`. Each bundles
+  its templates and scripts in a `files/` directory, and each ends with the
+  measured failures its rules exist to prevent.
+- `scripts/install-skills.mjs`, which installs the skills into any repository
+  for Claude Code (native `.claude/skills/`), Cursor (`.cursor/commands/`
+  adapters), and Codex (`.agents/skills/` pointers plus a marker-delimited
+  `AGENTS.md` index block). Idempotent; re-running refreshes in place.
+- A scope checker and a worktree helper bundled with `build-parallel`, the
+  two pieces of v1 enforcement that earned their keep.
+- A new test suite covering the installer, the scope checker, and the
+  worktree helper.
+
+### Changed
+
+- Review policy: one independent round, then the orchestrator decides every
+  finding on the record. Corrections are re-gated, not re-reviewed. The field
+  trial measured review rounds finding new material in each other's
+  corrections without converging; the useful findings all arrived in round
+  one.
+- Parallel execution now requires a reviewed contract commit before any
+  parallel work, because two concurrently built workstreams met at an
+  interface neither could see whole.
+- Process sizing is an explicit planning step with three tiers (solo,
+  reviewed, parallel), because v1 charged the same fixed toll per slice
+  regardless of slice size.
+
+### Removed
+
+- The entire v1 control plane: `repo-overlay/` (orchestration scripts, run
+  state, commit-kind gates, phase machines, controller adapters, process
+  documents), `architectures/`, `schemas/`, `examples/`, the generated
+  documentation tree, and their tests. Eighteen distinct control-plane
+  defects blocked the field trial, each a feature not threaded through its
+  readers, and the choreography amplified small orchestrator mistakes into
+  lost review rounds and stranded work. The v1 implementation remains in git
+  history before this release.
+
 ### Fixed
 
 - **The initialization gate assumed every operation happens exactly once.** Four
