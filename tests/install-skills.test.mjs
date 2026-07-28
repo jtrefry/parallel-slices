@@ -19,7 +19,12 @@ import {
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const installer = join(repoRoot, "scripts", "install-skills.mjs");
-const SKILLS = ["build-parallel", "plan-milestone", "review-and-decide"];
+const SKILLS = [
+  "build-parallel",
+  "plan-milestone",
+  "review-and-decide",
+  "secure-supply-chain",
+];
 
 function runInstaller(args) {
   return spawnSync(process.execPath, [installer, ...args], {

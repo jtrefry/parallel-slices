@@ -1,0 +1,58 @@
+# Report-then-gate image scan job. Replace the angle-bracket placeholders.
+#
+# Use it twice:
+#   - in CI on pull_request, so image findings block before merge
+#   - in a workflow on schedule (daily) against the default branch, so
+#     advisories published between merges surface within a day
+#
+# The job builds locally and never pushes. Keep the gate inputs identical
+# everywhere the image is scanned, the deploy pipeline included, so one
+# ignore file and one severity floor govern every scan.
+
+# If this job lives inside a called (reusable) workflow, every caller job
+# must grant at least the permissions below: the platform validates caller
+# grants at plan time for every job, before if: conditions skip the callers
+# that never scan.
+
+jobs:
+  image-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Both are required for the SARIF upload; private repositories fail
+      # without actions: read.
+      actions: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@<pinned-sha> # <version>
+
+      - name: Build image
+        run: >
+          docker build
+          --file <path/to/Dockerfile>
+          --target <runtime-target>
+          --tag scan-target:${{ github.sha }}
+          .
+
+      - name: Report all findings
+        uses: aquasecurity/trivy-action@<pinned-version>
+        with:
+          image-ref: scan-target:${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: "0"
+
+      - name: Upload findings to the code-scanning view
+        uses: github/codeql-action/upload-sarif@<pinned-version>
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Gate on blocking severities
+        uses: aquasecurity/trivy-action@<pinned-version>
+        with:
+          image-ref: scan-target:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: "true"
+          trivyignores: .trivyignore
+          exit-code: "1"

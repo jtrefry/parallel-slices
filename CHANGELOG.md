@@ -10,6 +10,27 @@ releases begin.
 
 ## [Unreleased]
 
+### Added
+
+- Plain-language user guides under `docs/skills/`: one per skill plus an
+  index, written for readers who build with an agent and are learning
+  software quality, CI, and CD. Each guide lists the skill's features, the
+  decisions behind them and why they were made, the bundled files, and the
+  measured failures behind the rules, and explains the surrounding tooling
+  (workflows, scanners, suppression lists) in beginner terms. Linked from
+  the README.
+
+- The `secure-supply-chain` skill: gate dependency and container-image
+  vulnerabilities with each tool's native mechanisms instead of custom glue.
+  Production-only runtime images, report-then-gate scanning at pull request,
+  deploy, and on a schedule, one scoped suppression list per tool with native
+  expiry, overrides proven to load, and platform-native failure alerts. Ships
+  with an image-scan job template and a suppression policy template. Its
+  receipts come from a three-day deploy outage in which every seam the rules
+  close had opened, and from the skill's first field application to that
+  repository the same day, which added the permission, sequencing, and
+  job-level-signal rules.
+
 ## [2.0.0] - 2026-07-27
 
 A ground-up replacement of the version 1 control plane, informed by a full
