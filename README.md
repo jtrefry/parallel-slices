@@ -35,6 +35,12 @@ Each skill bundles its own templates and scripts (worker packets, review
 prompts, a ground-truth template, a scope checker, a worktree helper, an
 image-scan job, a suppression policy) in a `files/` directory beside it.
 
+New to CI, CD, or software quality? Plain-language guides to every skill,
+written for readers who build with an agent and are learning the
+fundamentals, start at [`docs/skills/`](docs/skills/README.md). Each guide
+explains the skill's features, the decisions behind them, why those
+decisions were made, and the tools involved.
+
 ## Install
 
 ```bash

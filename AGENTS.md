@@ -25,6 +25,7 @@ nowhere.
 | `skills/<name>/files/`       | Templates and scripts bundled with that skill               |
 | `scripts/install-skills.mjs` | The only installer; copies skills and writes tool adapters  |
 | `tests/`                     | Behavior-focused coverage for the installer and the scripts |
+| `docs/skills/`               | Plain-language user guides, one per skill, plus an index    |
 | `docs/assets/`               | README imagery                                              |
 
 ## Rules
@@ -47,6 +48,7 @@ nowhere.
 1. Read the skill or script you are changing in full, and the test that
    covers it.
 2. Search for every consumer of the behavior you are touching; the installer,
-   the tests, and the README must stay aligned with the skills.
+   the tests, the README, and the guides in `docs/skills/` must stay aligned
+   with the skills.
 3. Prefer deleting over adding. Version 2 exists because deletion was the
    correct fix.
