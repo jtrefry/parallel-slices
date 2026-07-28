@@ -40,6 +40,13 @@ was standing where the mechanism should have been.
   one permissive run that records everything (upload the SARIF to the
   platform's code-scanning view, which is its designed home), then one strict
   run that fails the job on the severities you block.
+- Grant the upload its real permissions everywhere the scan runs. The SARIF
+  upload needs `security-events: write`, and on a private repository
+  `actions: read` as well. When the scan lives inside a called (reusable)
+  workflow, every caller job must grant at least that set: the platform
+  validates caller grants at plan time, for every job, before condition
+  checks skip the environments that never scan. One under-granted caller
+  fails the entire run before a single job starts.
 
 ## 3. Scan at three moments
 
@@ -51,6 +58,12 @@ was standing where the mechanism should have been.
   merges, and a pipeline that scans only on change discovers them when the
   next deploy fails, days later and silently. The scheduled scan turns that
   into a next-morning notification.
+
+- Land the image fix before the gate that enforces it, or expect the gate's
+  first pull request to fail on itself: a scan job added in the same change
+  set builds images from a base that still ships the finding, and red is the
+  correct verdict. Merge the fix, refresh the gate's branch, and let it
+  prove itself green.
 
 The report-then-gate job, ready to adapt for the pull request and scheduled
 workflows, is in `files/image-scan-job-template.yml` beside this skill.
@@ -96,6 +109,10 @@ workflows, is in `files/image-scan-job-template.yml` beside this skill.
   runbook so the next repository gets it on day one.
 - Do not write a custom notification job. It is machinery with an owner, and
   the platform's zero-maintenance channel does the same work.
+- Watch the job, not the run. A workflow run can conclude success while
+  every job in it was skipped (a superseded trigger, a false condition), so
+  any watcher keyed on run conclusions will report recovery that never
+  happened. The terminal signal is the deploying job's own conclusion.
 
 ## Receipts
 
@@ -118,3 +135,14 @@ workflows, is in `files/image-scan-job-template.yml` beside this skill.
 - The patched major of the vulnerable package changed its CommonJS export
   shape, so its consumer could not be overridden onto it. The fix was to
   stop shipping the consumer, not to force a version that would not load.
+- The gate's own first pull-request run died at the SARIF upload with
+  "Resource not accessible by integration": the private-repository
+  permission was missing, and the gate step behind it never executed.
+- The first deploy after the gate merged ended in startup_failure with zero
+  jobs: the scan's permissions were granted to one caller of the reusable
+  deploy workflow and not the other two, and plan-time validation rejected
+  the whole run even though those environments' jobs would have been
+  skipped anyway.
+- While that was being diagnosed, two deploy runs concluded "success" with
+  every deploy job skipped, and a monitor keyed on run conclusions declared
+  the outage over while nothing had deployed.

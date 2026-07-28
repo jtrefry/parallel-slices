@@ -19,7 +19,9 @@ releases begin.
   expiry, overrides proven to load, and platform-native failure alerts. Ships
   with an image-scan job template and a suppression policy template. Its
   receipts come from a three-day deploy outage in which every seam the rules
-  close had opened.
+  close had opened, and from the skill's first field application to that
+  repository the same day, which added the permission, sequencing, and
+  job-level-signal rules.
 
 ## [2.0.0] - 2026-07-27
 
