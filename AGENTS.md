@@ -1,7 +1,7 @@
 # Parallel Slices contributor instructions
 
 These instructions govern work on Parallel Slices itself. The repository is
-deliberately small: three skills, an installer, two bundled scripts, and
+deliberately small: four skills, an installer, two bundled scripts, and
 tests. Keep it that way.
 
 ## What this repository is

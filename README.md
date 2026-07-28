@@ -4,17 +4,19 @@
 
 **Plan the product. Build it in parallel slices.**
 
-Parallel Slices is three portable agent skills that take a product milestone
+Parallel Slices is four portable agent skills. Three take a product milestone
 from an approved plan to a finished, independently reviewed result, with the
 developer involved exactly twice: approving the plan and receiving the
-outcome. They install into any repository for Claude Code, Cursor, and Codex.
+outcome. The fourth keeps the delivery pipeline's supply chain gated using
+the scanning tools' own mechanisms. They install into any repository for
+Claude Code, Cursor, and Codex.
 
 [Website](https://parallelslices.com) ·
 [GitHub](https://github.com/jtrefry/parallel-slices)
 
 > **Status:** version 2 is a ground-up replacement of the version 1 control
 > plane. What used to be a 13,000-line orchestration state machine is now
-> three skills, two small scripts, and an installer. The reasons are in
+> a small set of skills, two small scripts, and an installer. The reasons are in
 > [Why version 2](#why-version-2) and the [changelog](CHANGELOG.md); the v1
 > implementation remains in git history before 2.0.0.
 
@@ -22,15 +24,16 @@ outcome. They install into any repository for Claude Code, Cursor, and Codex.
 
 ## The skills
 
-| Skill                                                    | What it does                                                                                                                                                                          |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`plan-milestone`](skills/plan-milestone/SKILL.md)       | Plan work so it runs to completion autonomously: requirements with observable evidence, committed ground truth, process sizing, and every authorization collected before work begins. |
-| [`build-parallel`](skills/build-parallel/SKILL.md)       | Execute the plan with parallel workers in isolated git worktrees: shared contracts first, one fresh agent per workstream, serial atomic integration.                                  |
-| [`review-and-decide`](skills/review-and-decide/SKILL.md) | One round of independent review by fresh agents, then the orchestrator decides every finding on the record. Reviews inform; they never veto.                                          |
+| Skill                                                        | What it does                                                                                                                                                                                                           |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`plan-milestone`](skills/plan-milestone/SKILL.md)           | Plan work so it runs to completion autonomously: requirements with observable evidence, committed ground truth, process sizing, and every authorization collected before work begins.                                  |
+| [`build-parallel`](skills/build-parallel/SKILL.md)           | Execute the plan with parallel workers in isolated git worktrees: shared contracts first, one fresh agent per workstream, serial atomic integration.                                                                   |
+| [`review-and-decide`](skills/review-and-decide/SKILL.md)     | One round of independent review by fresh agents, then the orchestrator decides every finding on the record. Reviews inform; they never veto.                                                                           |
+| [`secure-supply-chain`](skills/secure-supply-chain/SKILL.md) | Gate dependency and image vulnerabilities with each tool's native mechanisms: production-only runtime images, report-then-gate scans at pull request, deploy, and on a schedule, one scoped suppression list per tool. |
 
 Each skill bundles its own templates and scripts (worker packets, review
-prompts, a ground-truth template, a scope checker, a worktree helper) in a
-`files/` directory beside it.
+prompts, a ground-truth template, a scope checker, a worktree helper, an
+image-scan job, a suppression policy) in a `files/` directory beside it.
 
 ## Install
 

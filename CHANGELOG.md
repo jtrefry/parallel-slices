@@ -10,6 +10,17 @@ releases begin.
 
 ## [Unreleased]
 
+### Added
+
+- The `secure-supply-chain` skill: gate dependency and container-image
+  vulnerabilities with each tool's native mechanisms instead of custom glue.
+  Production-only runtime images, report-then-gate scanning at pull request,
+  deploy, and on a schedule, one scoped suppression list per tool with native
+  expiry, overrides proven to load, and platform-native failure alerts. Ships
+  with an image-scan job template and a suppression policy template. Its
+  receipts come from a three-day deploy outage in which every seam the rules
+  close had opened.
+
 ## [2.0.0] - 2026-07-27
 
 A ground-up replacement of the version 1 control plane, informed by a full
