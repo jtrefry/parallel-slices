@@ -32,10 +32,14 @@ reviewers can always find something new.
 
 - **Fresh**: reviewers did not build the work, so they carry none of the
   builder's assumptions.
-- **Independent**: with two or three reviewers (for high-stakes changes),
-  none sees another's conclusions. Two reviewers whose mistakes are
+- **Independent**: when there is more than one reviewer, none sees another's
+  conclusions. Two reviewers whose mistakes are
   uncorrelated catch what either alone would miss; a reviewer who has read
-  another's findings is no longer an independent sample.
+  another's findings is no longer an independent sample. Two is both the
+  default and the maximum: the uncorrelated pair is what does the work, and a
+  third reviewer costs as much as the second while finding much less. One
+  reviewer is enough only when the change touches nothing the automated checks
+  are blind to.
 - **No veto**: reviewers report findings at the severity they actually
   believe, knowing the verdict informs a decision rather than blocking
   anything. This framing is load-bearing: a reviewer with a veto learns to

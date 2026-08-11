@@ -18,9 +18,12 @@ most expensive part of the pipeline.
 
 ## 1. Run the review
 
-- Spawn fresh agents that did not build the work: at least one, two or three
-  for high-stakes changes. Build each prompt from
-  `files/review-prompt-template.md` beside this skill.
+- Spawn fresh agents that did not build the work, using
+  `files/review-prompt-template.md` beside this skill. Two is both the default
+  and the ceiling: uncorrelated errors are the entire mechanism, and a third
+  reviewer pays the same price for a much smaller return. Drop to one only when
+  the change touches nothing a gate cannot see: no wire contract, no security
+  boundary, no parity data, no platform this host cannot exercise.
 - They review the real integrated diff against the plan, the contracts, and
   the ground-truth documents, not a summary of it.
 - They work independently and never see each other's conclusions. Two

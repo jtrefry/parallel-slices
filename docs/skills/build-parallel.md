@@ -104,6 +104,10 @@ The orchestrator follows rules that all trace to expensive accidents:
 - **Never weaken a gate to make work pass.** If a gate is wrong, fixing the
   gate is its own change with its own reasoning. Loosening checks to get
   green is how quality debt becomes invisible.
+- **Correct once, then escalate.** If a candidate fails the same check again
+  after one correction, the problem is the plan or the contract rather than
+  the worker, and a third attempt spends more time to produce a different
+  failure. The orchestrator stops and brings you the decision.
 
 ### 5. Workers are allowed to push back
 
