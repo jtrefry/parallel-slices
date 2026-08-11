@@ -31,6 +31,23 @@ releases begin.
   repository the same day, which added the permission, sequencing, and
   job-level-signal rules.
 
+### Changed
+
+- `review-and-decide` fixes the reviewer count at two, with one permitted only
+  when the change touches nothing a gate cannot see, and no third. The previous
+  "at least one, two or three for high-stakes changes" named a range without a
+  criterion for choosing inside it. The saving comes from removing the third
+  reviewer, not from weakening the pair: two reviewers with uncorrelated errors
+  are the mechanism this skill depends on, so the count is capped rather than
+  reduced.
+
+- `build-parallel` bounds correction attempts: a candidate that fails the same
+  gate after one correction is escalated as a plan or contract problem instead
+  of retried. This applies the convergence limit `review-and-decide` already
+  measured in review rounds to the one remaining unbounded loop in the
+  pipeline. A third attempt that finally passes is usually a worker routing
+  around a bad contract, which is a latent defect rather than a fix.
+
 ## [2.0.0] - 2026-07-27
 
 A ground-up replacement of the version 1 control plane, informed by a full

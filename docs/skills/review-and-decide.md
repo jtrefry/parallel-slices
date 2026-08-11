@@ -32,16 +32,27 @@ reviewers can always find something new.
 
 - **Fresh**: reviewers did not build the work, so they carry none of the
   builder's assumptions.
-- **Independent**: with two or three reviewers (for high-stakes changes),
-  none sees another's conclusions. Two reviewers whose mistakes are
+- **Independent**: when there is more than one reviewer, none sees another's
+  conclusions. Two reviewers whose mistakes are
   uncorrelated catch what either alone would miss; a reviewer who has read
-  another's findings is no longer an independent sample.
+  another's findings is no longer an independent sample. Two is both the
+  default and the maximum: the uncorrelated pair is what does the work, and a
+  third reviewer costs as much as the second while finding much less. One
+  reviewer is enough only when the change touches nothing the automated checks
+  are blind to.
 - **No veto**: reviewers report findings at the severity they actually
   believe, knowing the verdict informs a decision rather than blocking
   anything. This framing is load-bearing: a reviewer with a veto learns to
   negotiate; a reviewer without one reports what is real. (The receipt for
   the alternative: under a unanimity rule, reviewers once deadlocked a
   gate for eight rounds. A gate nothing can satisfy is not a gate.)
+
+**Choosing the reviewer's model.** By default reviewers run in whatever tool
+is driving the work, on whatever model that tool is using. That is the weakest
+version of the idea: two reviewers on one model make the same mistakes, so the
+second one mostly agrees with the first. A project can name a different
+reviewer command in its own `AGENTS.md`, and the orchestrator will use it. The
+README explains how, with examples for each provider.
 
 Reviewers read the real integrated changes against the plan, the
 contracts, and the ground truth, never a summary. Their prompts are built

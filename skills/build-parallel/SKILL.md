@@ -90,6 +90,11 @@ sequence in ways that surface later and cost more than the discipline does.
   silence from death unless you say which it is.
 - **Never weaken a gate to make work pass.** If a gate is wrong, stop and fix
   the gate as its own change, with its own reasoning.
+- **Correct once, then escalate.** A candidate that fails the same gate after
+  one correction is a plan or contract problem, not a worker problem, and a
+  third attempt buys a new failure rather than a fix. Stop, say what would
+  unblock it, and take it to the developer as a decision. This is the
+  convergence limit `review-and-decide` measured, applied to build attempts.
 
 ## 5. When a worker returns
 
