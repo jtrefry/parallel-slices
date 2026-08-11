@@ -105,62 +105,74 @@ a different plan than the builder is not competing for the builder's budget.
 
 Signing each CLI in once is the whole setup.
 
-| Provider  | Sign in once                                     | Reviewer command                             |
-| --------- | ------------------------------------------------ | -------------------------------------------- |
-| Anthropic | `claude` (Pro or Max plan)                       | `claude -p "$(cat)" --model claude-opus-5`   |
-| OpenAI    | `codex login` (any ChatGPT plan, including Free) | `codex exec --model gpt-5.6 "$(cat)"`        |
-| Google    | run `gemini`, choose "Sign in with Google"       | `gemini -m gemini-3-pro-preview -p "$(cat)"` |
-| Cursor    | `agent login` (Cursor plan)                      | `agent -p "$(cat)"`                          |
+| Provider  | Sign in once                                   | Reviewer command                             |
+| --------- | ---------------------------------------------- | -------------------------------------------- |
+| Anthropic | run `claude`, log in with a Pro or Max account | `claude -p "$(cat)" --model opus`            |
+| OpenAI    | `codex login`                                  | `codex exec --model gpt-5.6-terra "$(cat)"`  |
+| Google    | run `gemini`, choose "Sign in with Google"     | `gemini -m gemini-3-pro-preview -p "$(cat)"` |
+| Cursor    | run `agent` and complete its first-run sign-in | `agent -p "$(cat)"`                          |
 
-A reviewer command runs as a child of your agent, so it inherits your agent's
-environment. Three consequences worth knowing, none of them specific to this
-project:
+Model identifiers move faster than anything else here, and each vendor has its
+own way to list what your account can actually serve: `claude --model` accepts
+the aliases `opus`, `sonnet`, `haiku`, and `fable` as well as full names, so an
+alias survives version changes; `codex debug models` prints the Codex catalog;
+Gemini names are in the CLI's own model configuration.
 
-- **An exported `ANTHROPIC_API_KEY` makes a `claude` reviewer bill API rates
-  rather than your plan**, the same as it would in your own shell. If you keep
-  one around for other work, unset it for that command.
-- **Claude Code headless uses the same auth as interactive** and draws on the
-  same plan limits, so a signed-in machine needs no extra setup. For CI or any
-  machine without a browser, `claude setup-token` mints a long-lived token for
-  `CLAUDE_CODE_OAUTH_TOKEN`.
-- **Codex reads your ChatGPT plan's included usage** when you sign in with
-  ChatGPT, with no per-token charge until the allowance runs out. An API key is
-  the opposite: it bills per token and does not touch plan credits.
-- **Gemini's personal Google account tier is free** at 60 requests per minute
-  and 1,000 per day, which is ample for review. A `GEMINI_API_KEY` from AI
-  Studio is the alternative if you would rather not use the OAuth flow.
+Free-tier note: Gemini's personal Google account tier is 60 requests per minute
+and 1,000 per day, which is ample for review. Codex usage under a ChatGPT
+sign-in follows your ChatGPT plan's entitlements rather than per-token API
+billing.
 
-Model identifiers move faster than anything else here. Confirm the one you
-name is servable by your account before relying on it.
+### Three things that will bite you
 
-### If you need an API key anyway
+A reviewer command runs as a child of your agent and inherits its environment.
+None of this is specific to these skills; it is how those CLIs behave.
 
-Metered access still makes sense in three cases: unattended CI where browser
-login is impractical, a provider you do not subscribe to, and reaching models
-no first-party CLI exposes.
+- **In `-p` mode, an exported `ANTHROPIC_API_KEY` is always used, with no
+  prompt.** Interactive Claude Code asks you once whether to accept a key it
+  finds; non-interactive mode never asks. So a key you keep around for other
+  work will silently bill API rates for every review your plan already covers.
+  `unset ANTHROPIC_API_KEY` for the reviewer command. Anthropic's documented
+  precedence puts `ANTHROPIC_AUTH_TOKEN` above `ANTHROPIC_API_KEY`, both above
+  `CLAUDE_CODE_OAUTH_TOKEN`, and subscription login last.
+- **`claude --bare` does not use your subscription at all.** Bare mode never
+  reads OAuth credentials or the keychain and ignores `CLAUDE_CODE_OAUTH_TOKEN`;
+  it needs `ANTHROPIC_API_KEY`. Anthropic recommends it for scripted calls and
+  says it will become the default for `-p` in a future release, so a reviewer
+  command that works on a subscription today may start demanding a key later.
+  Pin the behavior you want rather than relying on the default.
+- **Do not set provider API keys as job-level environment variables in CI that
+  runs repository-controlled code.** This is OpenAI's own warning about
+  `OPENAI_API_KEY` and `CODEX_API_KEY`, and it generalizes: a reviewer runs
+  against a diff, and a diff can contain anything.
 
-```bash
-# xAI, Groq, Ollama, or anything else: OpenCode reaches 75+ providers
-opencode run --model openai/gpt-5.6 "$(cat)"
+For CI or any machine without a browser, `claude setup-token` mints a one-year
+OAuth token for `CLAUDE_CODE_OAUTH_TOKEN` that authenticates against your
+subscription; Codex accepts `CODEX_API_KEY` as a single-run override.
 
-# Aider, routing through OpenRouter
-aider --model openrouter/openai/gpt-5.6 --message "$(cat)"
-```
+### Other providers
+
+OpenCode reaches 75+ providers and Aider is model-agnostic through LiteLLM;
+either can serve as the reviewer command. Their flags are not reproduced here
+because they were not verified against primary sources at the time of writing.
+Check each tool's own documentation and confirm with the smoke test below.
 
 To keep Claude Code as the harness while swapping the model underneath it,
-point it at a gateway. The environment variables scope to that one child
-process, so the orchestrator itself stays where it is:
+point it at a gateway. `ANTHROPIC_BASE_URL` redirects the endpoint and
+`ANTHROPIC_AUTH_TOKEN` is the documented variable for gateways that
+authenticate with bearer tokens. The variables scope to that one child process,
+so the orchestrator stays where it is:
 
 ```bash
-env ANTHROPIC_BASE_URL=https://openrouter.ai/api \
-    ANTHROPIC_AUTH_TOKEN="$OPENROUTER_KEY" \
-    claude -p "$(cat)" --model openai/gpt-5.6
+env ANTHROPIC_BASE_URL=https://your-gateway.example \
+    ANTHROPIC_AUTH_TOKEN="$GATEWAY_TOKEN" \
+    claude -p "$(cat)"
 ```
 
-This works well here specifically because reviewers are read-only: their whole
-tool surface is reading, globbing, and grepping, and tool translation is where
-these gateways are least reliable. Note that this form is metered even if you
-hold a Claude subscription, because the request never reaches Anthropic.
+This suits reviewers specifically because they are read-only: the whole tool
+surface is reading, globbing, and grepping, and tool translation is where
+gateways are least reliable. Note that a gateway is metered even if you hold a
+Claude subscription, because the request never reaches Anthropic.
 
 ### Cursor, and running more than one model
 
@@ -191,11 +203,11 @@ whole point.
 agent -p "$(cat)"
 ```
 
-One caveat: at the time of writing, the Cursor CLI selects models with a
-`/model` slash command inside a session, and a flag for pinning the model in
-headless runs is an open feature request. If you need the reviewer's model
-pinned and audited, use one of the provider CLIs above instead. Check
-`agent --help` on your installed version before relying on any flag here.
+One caveat: Cursor's published CLI documentation covers `-p`,
+`--output-format`, and `--force`, but documents no model-selection flag for
+headless runs. If you need the reviewer's model pinned and auditable, use one
+of the provider CLIs above instead, and check `agent --help` on your installed
+version before relying on any flag here.
 
 Two further notes on Cursor: it receives a thin `.cursor/commands/` adapter
 rather than native skill invocation, so you invoke the skill deliberately; and
@@ -210,6 +222,11 @@ output before trusting it in a real review:
 ```bash
 echo "Reply with the word READY and nothing else." | <your reviewer command>
 ```
+
+Every command in this section was checked against the vendor's own
+documentation or source rather than a summary, but flags and model names change
+without notice. The smoke test above is the only claim here that cannot go
+stale.
 
 ## The flow
 
