@@ -79,6 +79,13 @@ summary, and findings from standard output. Reviewers never write, so the
 command needs no write access and no sandbox exception. Name no invocation and
 nothing changes.
 
+**These skills are instructions, not code.** Nothing here reads an environment
+variable, holds a credential, or talks to any API. The command you name is run
+by your agent's ordinary shell tool, and it authenticates exactly as it does
+when you type it in a terminal yourself. So the setup below is just "sign each
+CLI in once, the way you already would", and everything about plans, keys, and
+limits is that CLI's business rather than this project's.
+
 ### Reviewers run on the subscription you already have
 
 **Use a subscription wherever you have one.** For agentic work, which is
@@ -104,19 +111,20 @@ Signing each CLI in once is the whole setup.
 | OpenAI    | `codex login` (any ChatGPT plan, including Free) | `codex exec --model gpt-5.6 "$(cat)"`      |
 | Cursor    | `agent login` (Cursor plan)                      | `agent -p "$(cat)"`                        |
 
-Three things to know before you rely on this:
+A reviewer command runs as a child of your agent, so it inherits your agent's
+environment. Three consequences worth knowing, none of them specific to this
+project:
 
-- **A stray `ANTHROPIC_API_KEY` silently overrides your Claude subscription**
-  and bills API rates instead. If you have one exported for something else,
-  unset it for the reviewer command or you will pay twice for work your plan
-  already covers.
+- **An exported `ANTHROPIC_API_KEY` makes a `claude` reviewer bill API rates
+  rather than your plan**, the same as it would in your own shell. If you keep
+  one around for other work, unset it for that command.
 - **Claude Code headless uses the same auth as interactive** and draws on the
-  same plan limits, so no extra setup is needed locally. For CI or any machine
-  without a browser, `claude setup-token` mints a long-lived token for
+  same plan limits, so a signed-in machine needs no extra setup. For CI or any
+  machine without a browser, `claude setup-token` mints a long-lived token for
   `CLAUDE_CODE_OAUTH_TOKEN`.
 - **Codex reads your ChatGPT plan's included usage** when you sign in with
   ChatGPT, with no per-token charge until the allowance runs out. An API key is
-  the opposite: it bills per token and does not touch plan credits at all.
+  the opposite: it bills per token and does not touch plan credits.
 
 **Google is the exception right now.** Google stopped serving Gemini CLI
 requests on free, Google AI Pro, and Google AI Ultra accounts in June 2026, so
