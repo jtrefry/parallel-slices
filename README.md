@@ -105,11 +105,12 @@ a different plan than the builder is not competing for the builder's budget.
 
 Signing each CLI in once is the whole setup.
 
-| Provider  | Sign in once                                     | Reviewer command                           |
-| --------- | ------------------------------------------------ | ------------------------------------------ |
-| Anthropic | `claude` (Pro or Max plan)                       | `claude -p "$(cat)" --model claude-opus-5` |
-| OpenAI    | `codex login` (any ChatGPT plan, including Free) | `codex exec --model gpt-5.6 "$(cat)"`      |
-| Cursor    | `agent login` (Cursor plan)                      | `agent -p "$(cat)"`                        |
+| Provider  | Sign in once                                     | Reviewer command                             |
+| --------- | ------------------------------------------------ | -------------------------------------------- |
+| Anthropic | `claude` (Pro or Max plan)                       | `claude -p "$(cat)" --model claude-opus-5`   |
+| OpenAI    | `codex login` (any ChatGPT plan, including Free) | `codex exec --model gpt-5.6 "$(cat)"`        |
+| Google    | run `gemini`, choose "Sign in with Google"       | `gemini -m gemini-3-pro-preview -p "$(cat)"` |
+| Cursor    | `agent login` (Cursor plan)                      | `agent -p "$(cat)"`                          |
 
 A reviewer command runs as a child of your agent, so it inherits your agent's
 environment. Three consequences worth knowing, none of them specific to this
@@ -125,17 +126,12 @@ project:
 - **Codex reads your ChatGPT plan's included usage** when you sign in with
   ChatGPT, with no per-token charge until the allowance runs out. An API key is
   the opposite: it bills per token and does not touch plan credits.
+- **Gemini's personal Google account tier is free** at 60 requests per minute
+  and 1,000 per day, which is ample for review. A `GEMINI_API_KEY` from AI
+  Studio is the alternative if you would rather not use the OAuth flow.
 
-**Google is the exception right now.** Google stopped serving Gemini CLI
-requests on free, Google AI Pro, and Google AI Ultra accounts in June 2026, so
-the subscription path most guides still describe no longer works. A Gemini
-reviewer needs an API key (or Google's newer CLI on a smaller quota):
-
-```bash
-GEMINI_API_KEY="$YOUR_KEY" gemini -m gemini-3.1-pro -p "$(cat)"
-```
-
-Verify this before planning around it; it changed recently and may change again.
+Model identifiers move faster than anything else here. Confirm the one you
+name is servable by your account before relying on it.
 
 ### If you need an API key anyway
 
