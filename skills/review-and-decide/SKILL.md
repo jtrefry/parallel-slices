@@ -24,6 +24,13 @@ most expensive part of the pipeline.
   reviewer pays the same price for a much smaller return. Drop to one only when
   the change touches nothing a gate cannot see: no wire contract, no security
   boundary, no parity data, no platform this host cannot exercise.
+- If the project's `AGENTS.md` names a reviewer invocation, use it: run that
+  command once per reviewer, pass the review prompt on standard input, and read
+  the verdict and findings from standard output. Reviewers whose errors are
+  uncorrelated are the entire mechanism, and two reviewers on one model share
+  its blind spots, so a project that cares about the second opinion points it at
+  a peer-capability model from a different provider. With no invocation named,
+  spawn fresh agents in the current tool.
 - They review the real integrated diff against the plan, the contracts, and
   the ground-truth documents, not a summary of it.
 - They work independently and never see each other's conclusions. Two

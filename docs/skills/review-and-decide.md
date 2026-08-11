@@ -47,6 +47,13 @@ reviewers can always find something new.
   the alternative: under a unanimity rule, reviewers once deadlocked a
   gate for eight rounds. A gate nothing can satisfy is not a gate.)
 
+**Choosing the reviewer's model.** By default reviewers run in whatever tool
+is driving the work, on whatever model that tool is using. That is the weakest
+version of the idea: two reviewers on one model make the same mistakes, so the
+second one mostly agrees with the first. A project can name a different
+reviewer command in its own `AGENTS.md`, and the orchestrator will use it. The
+README explains how, with examples for each provider.
+
 Reviewers read the real integrated changes against the plan, the
 contracts, and the ground truth, never a summary. Their prompts are built
 from `files/review-prompt-template.md`.

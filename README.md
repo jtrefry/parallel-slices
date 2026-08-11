@@ -54,6 +54,116 @@ entries and Codex gets `.agents/skills/` pointers plus a marker-delimited
 index block in `AGENTS.md`, all pointing at that same canonical copy.
 Re-running the installer refreshes everything in place.
 
+## Choosing the reviewer model
+
+By default, reviewers run as fresh agents inside whatever tool is driving the
+work, on whatever model that tool is using. That is the weakest form of the
+idea. Two reviewers on the same model share its blind spots, so the second one
+largely agrees with the first, and independent review stops being independent.
+For work that matters, point the reviewer at a peer-capability model from a
+different provider.
+
+Name the invocation in **your project's own `AGENTS.md`**. Every tool these
+skills install into already reads that file, and the installer only ever
+replaces its own marker-delimited block, so your text survives re-installs.
+
+```markdown
+## Review policy
+
+Run reviewers with: `codex exec --model gpt-5.6 "$(cat)"`
+```
+
+The contract is deliberately small: the orchestrator runs your command once per
+reviewer, passes the review prompt on standard input, and reads the verdict,
+summary, and findings from standard output. Reviewers never write, so the
+command needs no write access and no sandbox exception. Name no invocation and
+nothing changes.
+
+### Examples by provider
+
+Each form below takes the prompt on standard input. `"$(cat)"` is what hands it
+to a CLI that expects the prompt as an argument.
+
+```bash
+# OpenAI (Codex CLI): progress goes to stderr, final message to stdout
+codex exec --model gpt-5.6 "$(cat)"
+
+# Google (Gemini CLI)
+gemini -m gemini-3.1-pro -p "$(cat)"
+
+# Anthropic (Claude Code)
+claude -p "$(cat)" --model claude-opus-5
+
+# xAI, Groq, Ollama, or anything else: OpenCode reaches 75+ providers
+opencode run --model openai/gpt-5.6 "$(cat)"
+
+# Aider, routing through OpenRouter
+aider --model openrouter/openai/gpt-5.6 --message "$(cat)"
+```
+
+To keep Claude Code as the harness while swapping the model underneath it,
+point it at a gateway. The environment variables scope to that one child
+process, so the orchestrator itself stays where it is:
+
+```bash
+env ANTHROPIC_BASE_URL=https://openrouter.ai/api \
+    ANTHROPIC_AUTH_TOKEN="$OPENROUTER_KEY" \
+    claude -p "$(cat)" --model openai/gpt-5.6
+```
+
+This works well here specifically because reviewers are read-only: their whole
+tool surface is reading, globbing, and grepping, and tool translation is where
+these gateways are least reliable.
+
+### Cursor, and running more than one model
+
+Cursor has three separate paths, and they are worth keeping straight.
+
+**The orchestrator's own model** is whatever you select in Cursor. Adding your
+own provider keys under **Settings → Models** (OpenAI, Anthropic, Google, xAI)
+lets you drive the work with one vendor's frontier model.
+
+**The reviewers** do not have to run in Cursor at all, and this is the reliable
+path to more than one model. Cursor's agent can run terminal commands, so it
+honors exactly the same `AGENTS.md` invocation as every other tool. To get two
+reviewers on two different providers, name both:
+
+```markdown
+## Review policy
+
+Run the first reviewer with: `codex exec --model gpt-5.6 "$(cat)"`
+Run the second reviewer with: `gemini -m gemini-3.1-pro -p "$(cat)"`
+```
+
+Neither reviewer shares a provider with the other or with Cursor, which is the
+whole point.
+
+**Cursor's own CLI** can also serve as a reviewer:
+
+```bash
+agent -p "$(cat)"
+```
+
+One caveat: at the time of writing, the Cursor CLI selects models with a
+`/model` slash command inside a session, and a flag for pinning the model in
+headless runs is an open feature request. If you need the reviewer's model
+pinned and audited, use one of the provider CLIs above instead. Check
+`agent --help` on your installed version before relying on any flag here.
+
+Two further notes on Cursor: it receives a thin `.cursor/commands/` adapter
+rather than native skill invocation, so you invoke the skill deliberately; and
+if agent terminal access is disabled, no configuration reaches the reviewers
+and you get the single-tool default.
+
+### Verify before you rely on it
+
+CLI flags move. Confirm the invocation runs and returns findings on standard
+output before trusting it in a real review:
+
+```bash
+echo "Reply with the word READY and nothing else." | <your reviewer command>
+```
+
 ## The flow
 
 ```mermaid
