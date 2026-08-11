@@ -79,21 +79,63 @@ summary, and findings from standard output. Reviewers never write, so the
 command needs no write access and no sandbox exception. Name no invocation and
 nothing changes.
 
-### Examples by provider
+### Reviewers run on the subscription you already have
 
-Each form below takes the prompt on standard input. `"$(cat)"` is what hands it
-to a CLI that expects the prompt as an argument.
+**Use a subscription wherever you have one.** For agentic work, which is
+token-heavy by construction, every provider's flat-rate plan is cheaper than
+its metered API by orders of magnitude, not percentages. A review pass that is
+a rounding error against a monthly plan is a real line item against a per-token
+bill, and reviewers read the whole diff plus the surrounding code every time.
+
+That is also what makes cross-provider review practical rather than a luxury.
+If you already hold plans with two vendors, running the reviewer on the one
+that did not build the work costs nothing extra per review. The independence
+that makes a second reviewer worth having turns out to be the cheap option, not
+the expensive one.
+
+It helps on rate limits too. Plans meter the tool as a whole, so a reviewer on
+a different plan than the builder is not competing for the builder's budget.
+
+Signing each CLI in once is the whole setup.
+
+| Provider  | Sign in once                                     | Reviewer command                           |
+| --------- | ------------------------------------------------ | ------------------------------------------ |
+| Anthropic | `claude` (Pro or Max plan)                       | `claude -p "$(cat)" --model claude-opus-5` |
+| OpenAI    | `codex login` (any ChatGPT plan, including Free) | `codex exec --model gpt-5.6 "$(cat)"`      |
+| Cursor    | `agent login` (Cursor plan)                      | `agent -p "$(cat)"`                        |
+
+Three things to know before you rely on this:
+
+- **A stray `ANTHROPIC_API_KEY` silently overrides your Claude subscription**
+  and bills API rates instead. If you have one exported for something else,
+  unset it for the reviewer command or you will pay twice for work your plan
+  already covers.
+- **Claude Code headless uses the same auth as interactive** and draws on the
+  same plan limits, so no extra setup is needed locally. For CI or any machine
+  without a browser, `claude setup-token` mints a long-lived token for
+  `CLAUDE_CODE_OAUTH_TOKEN`.
+- **Codex reads your ChatGPT plan's included usage** when you sign in with
+  ChatGPT, with no per-token charge until the allowance runs out. An API key is
+  the opposite: it bills per token and does not touch plan credits at all.
+
+**Google is the exception right now.** Google stopped serving Gemini CLI
+requests on free, Google AI Pro, and Google AI Ultra accounts in June 2026, so
+the subscription path most guides still describe no longer works. A Gemini
+reviewer needs an API key (or Google's newer CLI on a smaller quota):
 
 ```bash
-# OpenAI (Codex CLI): progress goes to stderr, final message to stdout
-codex exec --model gpt-5.6 "$(cat)"
+GEMINI_API_KEY="$YOUR_KEY" gemini -m gemini-3.1-pro -p "$(cat)"
+```
 
-# Google (Gemini CLI)
-gemini -m gemini-3.1-pro -p "$(cat)"
+Verify this before planning around it; it changed recently and may change again.
 
-# Anthropic (Claude Code)
-claude -p "$(cat)" --model claude-opus-5
+### If you need an API key anyway
 
+Metered access still makes sense in three cases: unattended CI where browser
+login is impractical, a provider you do not subscribe to, and reaching models
+no first-party CLI exposes.
+
+```bash
 # xAI, Groq, Ollama, or anything else: OpenCode reaches 75+ providers
 opencode run --model openai/gpt-5.6 "$(cat)"
 
@@ -113,7 +155,8 @@ env ANTHROPIC_BASE_URL=https://openrouter.ai/api \
 
 This works well here specifically because reviewers are read-only: their whole
 tool surface is reading, globbing, and grepping, and tool translation is where
-these gateways are least reliable.
+these gateways are least reliable. Note that this form is metered even if you
+hold a Claude subscription, because the request never reaches Anthropic.
 
 ### Cursor, and running more than one model
 
