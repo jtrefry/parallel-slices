@@ -33,6 +33,11 @@ nowhere.
 - Every rule inside a skill must trace to a measured failure, and each skill's
   Receipts section is where that trace lives. A rule nobody can justify with
   an incident is a candidate for deletion, not for elaboration.
+- Instruction files carry a size budget, enforced by
+  `tests/instruction-budget.test.mjs`: each skill, each skill description, and
+  this file. The Receipts rule decides whether a rule is earned; the budget
+  decides whether the file can afford it. Raising a budget is a reviewed change
+  of its own, never a side effect of adding a rule.
 - Scripts stay dependency-free, cross-platform (Node `fs`/`path`, no shell
   pipelines, no macOS-only tools), and single-purpose. A script that needs
   another script is becoming a framework.
